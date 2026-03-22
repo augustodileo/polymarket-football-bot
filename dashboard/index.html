@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PolyBot Dashboard</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3"></script>
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <style>
@@ -187,8 +186,9 @@
             try {
                 const resp = await fetch(DATA_URL + '?t=' + Date.now());
                 allData = await resp.json();
-                render();
+                try { render(); } catch (renderErr) { console.error('Render error:', renderErr); }
             } catch (e) {
+                console.error('Fetch error:', e);
                 document.querySelector('.container').innerHTML += '<div class="no-data">No data yet. Bot needs to push dashboard-data.json.</div>';
             }
         }
@@ -219,130 +219,102 @@
             if (pnlChart) { pnlChart.destroy(); pnlChart = null; }
             if (leagueChart) { leagueChart.destroy(); leagueChart = null; }
 
-            // PnL Chart — continuous time axis like Grafana
+            // PnL Chart — step function with time labels, no adapter needed
 
-            function buildPnlTimeSeries(rangeMs) {
-                // Build step-function data: PnL stays flat between trades
-                const trades = allData.pnl_curve;
-                if (!trades.length) return [];
+            function filterByRange(trades, rangeMs) {
+                if (!rangeMs) return trades;
+                const cutoff = Date.now() - rangeMs;
+                return trades.filter(t => new Date(t.timestamp).getTime() >= cutoff);
+            }
 
-                const points = [];
-                const oldest = new Date(trades[0].timestamp).getTime();
-                const now = Date.now();
-                const rangeStart = rangeMs ? Math.max(now - rangeMs, oldest) : oldest;
-
-                // Start point at range start
-                let cumAtStart = 0;
-                for (const t of trades) {
-                    if (new Date(t.timestamp).getTime() <= rangeStart) cumAtStart = t.cumulative;
-                }
-                points.push({ x: rangeStart, y: cumAtStart });
-
-                // Each trade creates a step
-                for (const t of trades) {
-                    const ts = new Date(t.timestamp).getTime();
-                    if (ts < rangeStart) continue;
-                    // Flat line up to this trade
-                    points.push({ x: ts - 1, y: points[points.length - 1].y });
-                    // Step to new value
-                    points.push({ x: ts, y: t.cumulative });
-                }
-
-                // Extend to now
-                points.push({ x: now, y: points[points.length - 1].y });
-                return points;
+            function fmtTime(ts) {
+                const d = new Date(ts);
+                return d.toLocaleDateString(undefined, {month:'short', day:'numeric'}) + ' ' +
+                       d.toLocaleTimeString(undefined, {hour:'2-digit', minute:'2-digit'});
             }
 
             function renderPnlChart(rangeMs) {
-                const ctx = document.getElementById('pnlChart').getContext('2d');
-                const data = buildPnlTimeSeries(rangeMs);
+                const trades = filterByRange(allData.pnl_curve, rangeMs);
+                if (!trades.length) return;
+
+                // Build step data: label array + value array
+                const labels = [];
+                const values = [];
+                const colors = [];
+
+                // Starting point
+                const firstCum = trades.length > 0 ? trades[0].cumulative - trades[0].pnl : 0;
+                labels.push(fmtTime(trades[0].timestamp));
+                values.push(firstCum);
+                colors.push('#58a6ff');
+
+                for (const t of trades) {
+                    labels.push(fmtTime(t.timestamp));
+                    values.push(t.cumulative);
+                    colors.push(t.outcome === 'WIN' ? '#3fb950' : '#f85149');
+                }
+
+                // Extend to now
+                labels.push('Now');
+                values.push(values[values.length - 1]);
+                colors.push('#58a6ff');
 
                 if (pnlChart) pnlChart.destroy();
 
+                const ctx = document.getElementById('pnlChart').getContext('2d');
                 pnlChart = new Chart(ctx, {
                     type: 'line',
                     data: {
+                        labels: labels,
                         datasets: [{
-                            label: 'Cumulative PnL ($)',
-                            data: data,
+                            data: values,
                             segment: {
-                                borderColor: (ctx) => (ctx.p1.parsed.y >= 0 ? '#3fb950' : '#f85149'),
-                                backgroundColor: (ctx) => (ctx.p1.parsed.y >= 0 ? 'rgba(63,185,80,0.08)' : 'rgba(248,81,73,0.08)'),
+                                borderColor: function(c) { return c.p1.parsed.y >= 0 ? '#3fb950' : '#f85149'; }
                             },
                             borderColor: '#58a6ff',
+                            backgroundColor: 'rgba(88,166,255,0.05)',
                             fill: true,
-                            stepped: false,
-                            tension: 0,
-                            borderWidth: isMobile ? 2 : 2,
-                            pointRadius: 0,
-                            pointHitRadius: 10,
-                        },
-                        // Overlay trade points
-                        {
-                            label: 'Trades',
-                            data: allData.pnl_curve
-                                .filter(t => !rangeMs || Date.now() - new Date(t.timestamp).getTime() <= rangeMs)
-                                .map(t => ({ x: new Date(t.timestamp).getTime(), y: t.cumulative })),
-                            pointBackgroundColor: allData.pnl_curve
-                                .filter(t => !rangeMs || Date.now() - new Date(t.timestamp).getTime() <= rangeMs)
-                                .map(t => t.outcome === 'WIN' ? '#3fb950' : '#f85149'),
-                            pointRadius: isMobile ? 4 : 6,
-                            pointBorderWidth: 0,
-                            showLine: false,
+                            stepped: 'before',
+                            borderWidth: 2,
+                            pointBackgroundColor: colors,
+                            pointRadius: isMobile ? 3 : 5,
+                            pointHitRadius: 15,
                         }]
                     },
                     options: {
                         responsive: true,
                         maintainAspectRatio: true,
                         aspectRatio: isMobile ? 1.4 : 2.5,
-                        interaction: { mode: 'nearest', intersect: false },
                         plugins: {
                             legend: { display: false },
                             tooltip: {
                                 callbacks: {
-                                    title: (items) => new Date(items[0].parsed.x).toLocaleString(),
-                                    label: (ctx) => {
-                                        if (ctx.datasetIndex === 1) {
-                                            const idx = ctx.dataIndex;
-                                            const filtered = allData.pnl_curve.filter(t => !rangeMs || Date.now() - new Date(t.timestamp).getTime() <= rangeMs);
-                                            const t = filtered[idx];
-                                            if (t) return `${t.event}: $${t.pnl >= 0 ? '+' : ''}${t.pnl}`;
-                                        }
-                                        return `PnL: $${ctx.parsed.y.toFixed(2)}`;
+                                    label: function(c) {
+                                        const i = c.dataIndex;
+                                        if (i === 0 || i === labels.length - 1) return 'PnL: $' + c.parsed.y.toFixed(2);
+                                        const t = trades[i - 1];
+                                        if (t) return t.event + ': $' + (t.pnl >= 0 ? '+' : '') + t.pnl + ' (total: $' + t.cumulative + ')';
+                                        return 'PnL: $' + c.parsed.y.toFixed(2);
                                     }
                                 }
                             }
                         },
                         scales: {
-                            y: {
-                                grid: { color: '#21262d' },
-                                ticks: { color: '#8b949e', font: tickFont, callback: v => '$' + v }
-                            },
-                            x: {
-                                type: 'time',
-                                time: {
-                                    displayFormats: {
-                                        hour: isMobile ? 'HH:mm' : 'MMM d HH:mm',
-                                        day: 'MMM d',
-                                    }
-                                },
-                                grid: { color: '#21262d' },
-                                ticks: { color: '#8b949e', font: tickFont, maxRotation: 0, autoSkip: true, maxTicksLimit: isMobile ? 5 : 10 }
-                            }
+                            y: { grid: { color: '#21262d' }, ticks: { color: '#8b949e', font: tickFont, callback: function(v) { return '$' + v; } } },
+                            x: { grid: { color: '#21262d' }, ticks: { color: '#8b949e', font: tickFont, maxRotation: 0, autoSkip: true, maxTicksLimit: isMobile ? 5 : 10 } }
                         }
+                    }
                 });
             }
 
-            // Render PnL chart with default range (all)
             renderPnlChart(null);
 
-            // Time range buttons
-            document.querySelectorAll('.time-btn').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.time-btn').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    document.querySelectorAll('.time-btn').forEach(function(b) { b.classList.remove('active'); });
                     btn.classList.add('active');
-                    const range = btn.dataset.range;
-                    const ms = { '12h': 12*3600000, '1d': 86400000, '3d': 3*86400000, '7d': 7*86400000, 'all': null };
+                    var range = btn.dataset.range;
+                    var ms = { '12h': 12*3600000, '1d': 86400000, '3d': 3*86400000, '7d': 7*86400000, 'all': null };
                     renderPnlChart(ms[range] || null);
                 });
             });
