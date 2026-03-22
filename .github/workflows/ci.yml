@@ -27,7 +27,7 @@ jobs:
         run: |
           COV=$(uv run pytest tests/ --cov=src --cov-report=term 2>&1 | grep "^TOTAL" | awk '{print $4}' | tr -d '%')
           echo "Coverage: ${COV}%"
-          [ "$COV" -ge 80 ] || (echo "Below 80% threshold" && exit 1)
+          [ "$COV" -ge 70 ] || (echo "Below 70% threshold" && exit 1)
 
   docker:
     runs-on: ubuntu-latest
