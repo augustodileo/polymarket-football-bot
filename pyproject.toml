@@ -1,6 +1,6 @@
 [project]
 name = "polymarket-football-bot"
-version = "0.1.0"
+version = "1.0.0"
 description = "Automated Polymarket football trading bot — 80+ minute strategy"
 requires-python = ">=3.12"
 dependencies = [

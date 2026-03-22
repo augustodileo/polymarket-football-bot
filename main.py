@@ -16,11 +16,17 @@ Usage:
 import argparse
 import json
 from dataclasses import dataclass
+from importlib.metadata import version as pkg_version
 import logging
 import sys
 import time
 from datetime import date, datetime, timezone
 from pathlib import Path
+
+try:
+    __version__ = pkg_version("polymarket-football-bot")
+except Exception:
+    __version__ = "1.0.0"
 
 import yaml
 from polymarket_apis import PolymarketGammaClient, PolymarketClobClient, PolymarketReadOnlyClobClient
@@ -1035,7 +1041,22 @@ def run_loop(config: dict, mode: str):
     bankroll = _get_bankroll(config, mode, web3_client)
 
     tag = mode.upper()
-    log.info(f"Bot started in {tag} mode | Bankroll: ${bankroll:,.2f}")
+    print()
+    print("##########################################################")
+    print("#                                                        #")
+    print("#   ____       _        ____        _                    #")
+    print("#  |  _ \\ ___ | |_   _ | __ )  ___ | |_                 #")
+    print("#  | |_) / _ \\| | | | ||  _ \\ / _ \\| __|                #")
+    print("#  |  __/ (_) | | |_| || |_) | (_) | |_                 #")
+    print("#  |_|   \\___/|_|\\__, ||____/ \\___/ \\__|                #")
+    print("#                |___/                                   #")
+    print("#                                                        #")
+    print(f"#   Polymarket Football Trading Bot  v{__version__:<18s}#")
+    print(f"#   Mode: {tag:<44s}#")
+    print("#                                                        #")
+    print("##########################################################")
+    print()
+    log.info(f"Bankroll: ${bankroll:,.2f}")
     log.info(f"Monitoring {len(leagues)} leagues | Trade from minute {min_minute}+")
     if tier_mismatch_cfg.get("enabled"):
         mins = tier_mismatch_cfg.get("pre_match_bet_minutes_before", 30)
