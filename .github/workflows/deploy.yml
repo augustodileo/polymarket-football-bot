@@ -13,7 +13,7 @@ jobs:
       - uses: actions/checkout@v5
       - name: Read deploy script
         run: echo "DEPLOY_SCRIPT=$(cat .github/deploy.sh | base64 -w0)" >> $GITHUB_ENV
-      - name: Deploy to GCP VM
+      - name: Deploy + smoke test
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.DEPLOY_HOST }}
@@ -22,6 +22,18 @@ jobs:
           envs: BOT_MODE,BANKROLL,POLYMARKET_PRIVATE_KEY,POLYMARKET_FUNDER,GITHUB_TOKEN,GITHUB_REPO,PUSH_INTERVAL_SEC,DEPLOY_SCRIPT
           script: |
             echo "$DEPLOY_SCRIPT" | base64 -d | bash
+
+            echo ""
+            echo "=== Smoke Test ==="
+            STATUS=$(sudo docker inspect poly-bot --format '{{.State.Status}}' 2>/dev/null)
+            if [ "$STATUS" != "running" ]; then
+              echo "FAIL: poly-bot is $STATUS"
+              exit 1
+            fi
+            echo "poly-bot: running"
+            DASH=$(sudo docker inspect poly-dash --format '{{.State.Status}}' 2>/dev/null || echo "not found")
+            echo "poly-dash: $DASH"
+            echo "SMOKE TEST PASSED"
         env:
           BOT_MODE: ${{ vars.BOT_MODE }}
           BANKROLL: ${{ vars.BANKROLL }}
@@ -31,8 +43,3 @@ jobs:
           GITHUB_REPO: ${{ github.repository }}
           PUSH_INTERVAL_SEC: ${{ vars.PUSH_INTERVAL_SEC }}
           DEPLOY_SCRIPT: ${{ env.DEPLOY_SCRIPT }}
-
-  verify:
-    needs: deploy
-    uses: ./.github/workflows/smoke-test.yml
-    secrets: inherit

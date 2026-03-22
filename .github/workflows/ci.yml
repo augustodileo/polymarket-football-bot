@@ -22,10 +22,10 @@ jobs:
         run: |
           cp config.example.yaml config.yaml
           git describe --tags --always 2>/dev/null > VERSION || echo "dev" > VERSION
-      - run: uv run pytest tests/ -v --cov=. --cov-report=term-missing
+      - run: uv run pytest tests/ -v --cov=src --cov-report=term-missing
       - name: Coverage check
         run: |
-          COV=$(uv run pytest tests/ --cov=. --cov-report=term 2>&1 | grep "^TOTAL" | awk '{print $4}' | tr -d '%')
+          COV=$(uv run pytest tests/ --cov=src --cov-report=term 2>&1 | grep "^TOTAL" | awk '{print $4}' | tr -d '%')
           echo "Coverage: ${COV}%"
           [ "$COV" -ge 80 ] || (echo "Below 80% threshold" && exit 1)
 
@@ -36,48 +36,33 @@ jobs:
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0
-
-      - name: Build Docker image
+      - name: Build image
         run: |
           VERSION=$(git describe --tags --always 2>/dev/null || echo dev)
           echo "VERSION=$VERSION" >> $GITHUB_ENV
           docker build --build-arg VERSION=$VERSION -t poly-bot:$VERSION .
-
-      - name: Install container-structure-test
+      - name: Container structure test
         run: |
           curl -LO https://github.com/GoogleContainerTools/container-structure-test/releases/latest/download/container-structure-test-linux-amd64
           chmod +x container-structure-test-linux-amd64
           sudo mv container-structure-test-linux-amd64 /usr/local/bin/container-structure-test
-
-      - name: Run container structure tests
-        run: |
-          container-structure-test test \
-            --image poly-bot:${{ env.VERSION }} \
-            --config container-structure-test.yaml
+          container-structure-test test --image poly-bot:${{ env.VERSION }} --config container-structure-test.yaml
 
   dashboard:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 20
-
-      - name: Install Playwright
+      - name: Playwright tests
         working-directory: dashboard/tests
         run: |
           npm init -y
           npm install @playwright/test
           npx playwright install --with-deps chromium webkit
-
-      - name: Run dashboard tests
-        working-directory: dashboard/tests
-        run: npx playwright test --reporter=list
-
-      - name: Upload test artifacts on failure
-        if: failure()
+          npx playwright test --reporter=list
+      - if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: playwright-results
