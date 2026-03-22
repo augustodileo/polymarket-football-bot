@@ -1,12 +1,13 @@
 name: Deploy (manual)
 
 on:
-  workflow_dispatch:  # manual trigger only — for hotfixes
+  workflow_dispatch:
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
       - name: Deploy to GCP VM
         uses: appleboy/ssh-action@v1
         with:
@@ -14,35 +15,7 @@ jobs:
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           envs: BOT_MODE,BANKROLL,POLYMARKET_PRIVATE_KEY,POLYMARKET_FUNDER
-          script: |
-            cd ~/poly-bot
-            git fetch --tags
-            git pull origin main
-
-            VERSION=$(git describe --tags --always 2>/dev/null || echo "dev")
-            echo "Deploying version: $VERSION"
-
-            cp config.example.yaml config.yaml
-            if [ -n "$BANKROLL" ]; then
-              sed -i 's|bankroll: 10000|bankroll: '"$BANKROLL"'|' config.yaml
-            fi
-            if [ -n "$POLYMARKET_PRIVATE_KEY" ]; then
-              sed -i 's|# polymarket_private_key: ""|polymarket_private_key: "'"$POLYMARKET_PRIVATE_KEY"'"|' config.yaml
-            fi
-            if [ -n "$POLYMARKET_FUNDER" ]; then
-              sed -i 's|# polymarket_funder: ""|polymarket_funder: "'"$POLYMARKET_FUNDER"'"|' config.yaml
-            fi
-
-            sudo docker build --build-arg VERSION=$VERSION -t poly-bot:$VERSION -t poly-bot:latest .
-            sudo docker stop poly-bot 2>/dev/null || true
-            sudo docker rm poly-bot 2>/dev/null || true
-            sudo docker run -d --restart=always \
-              -v $(pwd)/config.yaml:/app/config.yaml \
-              -v $(pwd)/data:/app/data \
-              --name poly-bot \
-              poly-bot:$VERSION --${BOT_MODE:-paper}
-            sleep 5
-            sudo docker logs --tail 10 poly-bot
+          script_file: .github/deploy.sh
         env:
           BOT_MODE: ${{ vars.BOT_MODE }}
           BANKROLL: ${{ vars.BANKROLL }}

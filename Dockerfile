@@ -16,12 +16,15 @@ COPY pyproject.toml uv.lock* ./
 RUN uv sync --no-dev --frozen 2>/dev/null || uv sync --no-dev
 
 # Copy source code only — NO config.yaml
-COPY main.py engine.py stats.py analyze.py ./
+COPY src/ ./src/
 
 # Data + config mount points
 RUN mkdir -p /app/data
 VOLUME ["/app/data"]
 
+# Disable Python output buffering so print() shows in docker logs
+ENV PYTHONUNBUFFERED=1
+
 # config.yaml must be provided at runtime via volume mount
-ENTRYPOINT ["uv", "run", "python", "main.py"]
+ENTRYPOINT ["uv", "run", "python", "src/main.py"]
 CMD ["--paper"]

@@ -8,7 +8,7 @@ from datetime import datetime, timezone, timedelta
 from dataclasses import dataclass
 
 import sys
-sys.path.insert(0, str(Path(__file__).parent.parent))
+sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 import main as M
 from main import (

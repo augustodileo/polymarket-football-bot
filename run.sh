@@ -21,4 +21,4 @@ uv sync --quiet 2>/dev/null || uv sync
 git describe --tags --always 2>/dev/null > VERSION || echo "dev" > VERSION
 
 # Run the bot
-exec uv run python main.py "$@"
+exec uv run python src/main.py "$@"

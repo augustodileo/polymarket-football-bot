@@ -12,7 +12,7 @@ from pathlib import Path
 from datetime import datetime, timezone, timedelta
 
 import sys
-sys.path.insert(0, str(Path(__file__).parent.parent))
+sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 import main as M
 from main import (

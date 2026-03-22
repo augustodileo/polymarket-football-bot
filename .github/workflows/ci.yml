@@ -3,6 +3,7 @@ name: CI
 on:
   push:
   pull_request:
+  workflow_call:  # reusable by other workflows
 
 jobs:
   test:
@@ -11,27 +12,19 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
       - uses: astral-sh/setup-uv@v4
       - run: uv python install 3.12
       - run: uv sync
-
-      - name: Create config + version for tests
+      - name: Setup
         run: |
           cp config.example.yaml config.yaml
           git describe --tags --always 2>/dev/null > VERSION || echo "dev" > VERSION
-
-      - name: Run tests
-        run: uv run pytest tests/ -v --cov=. --cov-report=term-missing
-
-      - name: Check coverage threshold
+      - run: uv run pytest tests/ -v --cov=. --cov-report=term-missing
+      - name: Coverage check
         run: |
-          COVERAGE=$(uv run pytest tests/ --cov=. --cov-report=term 2>&1 | grep "^TOTAL" | awk '{print $4}' | tr -d '%')
-          echo "Coverage: ${COVERAGE}%"
-          if [ "$COVERAGE" -lt 80 ]; then
-            echo "Coverage ${COVERAGE}% is below 80% threshold"
-            exit 1
-          fi
+          COV=$(uv run pytest tests/ --cov=. --cov-report=term 2>&1 | grep "^TOTAL" | awk '{print $4}' | tr -d '%')
+          echo "Coverage: ${COV}%"
+          [ "$COV" -ge 80 ] || (echo "Below 80% threshold" && exit 1)
 
   docker:
     runs-on: ubuntu-latest
@@ -40,18 +33,12 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
-      - name: Get version
-        run: echo "VERSION=$(git describe --tags --always 2>/dev/null || echo dev)" >> $GITHUB_ENV
-
-      - name: Build Docker image
-        run: docker build --build-arg VERSION=${{ env.VERSION }} -t poly-bot:${{ env.VERSION }} .
-
-      - name: Test Docker image starts
+      - name: Build & smoke test
         run: |
+          VERSION=$(git describe --tags --always 2>/dev/null || echo dev)
+          docker build --build-arg VERSION=$VERSION -t poly-bot:$VERSION .
           cp config.example.yaml config.yaml
-          docker run --rm -v $(pwd)/config.yaml:/app/config.yaml poly-bot:${{ env.VERSION }} --ephemeral &
-          DOCKER_PID=$!
+          docker run --rm -v $(pwd)/config.yaml:/app/config.yaml poly-bot:$VERSION --ephemeral &
           sleep 15
-          kill $DOCKER_PID 2>/dev/null || true
+          kill $! 2>/dev/null || true
           echo "Docker smoke test passed"

@@ -22,8 +22,11 @@ import time
 from datetime import date, datetime, timezone
 from pathlib import Path
 
+# Project root is one level up from src/
+_PROJECT_ROOT = Path(__file__).parent.parent
+
 # Version injected at build time from git tag. See VERSION file.
-_VERSION_FILE = Path(__file__).parent / "VERSION"
+_VERSION_FILE = _PROJECT_ROOT / "VERSION"
 __version__ = _VERSION_FILE.read_text().strip() if _VERSION_FILE.exists() else "dev"
 
 import yaml
@@ -42,7 +45,7 @@ logging.getLogger("httpx").setLevel(logging.WARNING)
 logging.getLogger("httpcore").setLevel(logging.WARNING)
 log = logging.getLogger(__name__)
 
-BASE_DIR = Path(__file__).parent / "data"
+BASE_DIR = _PROJECT_ROOT / "data"
 
 # Set in run_loop() based on mode:
 #   live  -> data/live/
@@ -137,7 +140,7 @@ def load_state():
 
 
 def load_config() -> dict:
-    config_path = Path(__file__).parent / "config.yaml"
+    config_path = _PROJECT_ROOT / "config.yaml"
     if not config_path.exists():
         log.error("config.yaml not found — copy config.yaml and fill in your keys")
         sys.exit(1)
@@ -1039,21 +1042,23 @@ def run_loop(config: dict, mode: str):
     bankroll = _get_bankroll(config, mode, web3_client)
 
     tag = mode.upper()
-    print()
-    print("##########################################################")
-    print("#                                                        #")
-    print("#   ____       _        ____        _                    #")
-    print("#  |  _ \\ ___ | |_   _ | __ )  ___ | |_                 #")
-    print("#  | |_) / _ \\| | | | ||  _ \\ / _ \\| __|                #")
-    print("#  |  __/ (_) | | |_| || |_) | (_) | |_                 #")
-    print("#  |_|   \\___/|_|\\__, ||____/ \\___/ \\__|                #")
-    print("#                |___/                                   #")
-    print("#                                                        #")
-    print(f"#   Polymarket Football Trading Bot  v{__version__:<18s}#")
-    print(f"#   Mode: {tag:<44s}#")
-    print("#                                                        #")
-    print("##########################################################")
-    print()
+    banner = f"""
+##########################################################
+#                                                        #
+#   ____       _        ____        _                    #
+#  |  _ \\ ___ | |_   _ | __ )  ___ | |_                 #
+#  | |_) / _ \\| | | | ||  _ \\ / _ \\| __|                #
+#  |  __/ (_) | | |_| || |_) | (_) | |_                 #
+#  |_|   \\___/|_|\\__, ||____/ \\___/ \\__|                #
+#                |___/                                   #
+#                                                        #
+#   Polymarket Football Trading Bot  v{__version__:<18s}#
+#   Mode: {tag:<44s}#
+#                                                        #
+##########################################################
+"""
+    sys.stdout.write(banner)
+    sys.stdout.flush()
     log.info(f"Bankroll: ${bankroll:,.2f}")
     log.info(f"Monitoring {len(leagues)} leagues | Trade from minute {min_minute}+")
     if tier_mismatch_cfg.get("enabled"):

@@ -9,15 +9,21 @@ Automated football betting bot for Polymarket prediction markets. Runs in paper 
 Single Python process, no Docker, no microservices. Uses `uv` for dependency management with Python 3.12.
 
 ```
-main.py        — Orchestrator: discovery, monitoring, scheduling, execution, P&L tracking
-engine.py      — Decision engine: probability model (score + clock), edge calculation, Kelly sizing
-stats.py       — Data types (MatchStats, BookmakerOdds) — no external API calls
-analyze.py     — Trade performance analysis and reporting
-config.yaml    — All settings: bankroll, risk limits, leagues, strategy params
+src/
+  main.py      — Orchestrator: discovery, monitoring, scheduling, execution, P&L tracking
+  engine.py    — Decision engine: probability model (score + clock), edge calculation, Kelly sizing
+  stats.py     — Data types (MatchStats, BookmakerOdds)
+  analyze.py   — Trade performance analysis and reporting
+tests/         — Unit tests (163 tests, 87% coverage)
+.github/
+  workflows/   — CI (every push), Release & Deploy (on tag), Deploy manual
+  deploy.sh    — Shared deploy script (DRY)
+config.example.yaml — Template config (no secrets)
 run.sh         — Launcher script (requires --paper, --live, or --ephemeral flag)
+Dockerfile     — Container image (version injected from git tag)
 data/
-  paper/       — Paper mode state + daily trade logs (ephemeral, can be wiped)
-  live/        — Live mode state + daily trade logs (real money, never wiped)
+  paper/       — Paper mode state + daily trade logs
+  live/        — Live mode state + daily trade logs
   ephemeral/   — Throwaway runs, wiped on every start
 tests/         — Unit tests (134 tests, 80% coverage)
 ```

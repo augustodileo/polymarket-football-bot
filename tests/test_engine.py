@@ -1,5 +1,9 @@
 """Tests for engine.py — probability model + decision logic."""
 
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
+
 import pytest
 from engine import _estimate_probability, _find_market, evaluate, TradeSignal
 from stats import MatchStats, BookmakerOdds

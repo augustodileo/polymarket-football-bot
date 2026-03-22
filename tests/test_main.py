@@ -6,7 +6,7 @@ from unittest.mock import MagicMock
 from pathlib import Path
 
 import sys
-sys.path.insert(0, str(Path(__file__).parent.parent))
+sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from main import (
     parse_score, parse_teams_from_title, _get_poly_implied,
