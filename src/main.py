@@ -1186,8 +1186,9 @@ def run_loop(config: dict, mode: str):
                 if event.id in _evaluated_event_ids or event.id in _open_positions:
                     continue
 
-                # Check daily loss limit
-                if _session_pnl <= -risk["max_daily_loss"]:
+                # Check daily loss limit (0 = disabled)
+                max_loss = risk.get("max_daily_loss", 0)
+                if max_loss > 0 and _session_pnl <= -max_loss:
                     log.warning(f"Daily loss limit reached (${_session_pnl:.2f}) — not taking new trades")
                     break
 
