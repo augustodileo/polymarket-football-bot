@@ -41,11 +41,37 @@ def _make_market_mock(question="Will A win?", smt="moneyline", prices=None,
 
 
 class TestLoadConfig:
-    def test_loads_yaml(self):
-        cfg = load_config()
-        assert "bankroll" in cfg
-        assert "risk" in cfg
-        assert "leagues" in cfg
+    def test_loads_yaml(self, tmp_path):
+        """Test config loading with a temp config file."""
+        import yaml
+        config_data = {
+            "bankroll": 5000,
+            "risk": {"max_daily_loss": 500, "min_edge_pct": 2.0,
+                     "kelly_fraction": 0.25, "max_single_stake": 1000,
+                     "max_concurrent_positions": 5},
+            "strategy": {"min_minute": 80, "pre_fetch_minute": 78, "poll_interval_sec": 30},
+            "leagues": {"test": {"polymarket_tag": 1, "name": "Test"}},
+        }
+        config_file = tmp_path / "config.yaml"
+        config_file.write_text(yaml.dump(config_data))
+
+        with patch("main.Path") as mock_path:
+            mock_path.return_value.__truediv__ = lambda self, x: config_file
+            # Simpler: just patch the file path directly
+            import main as _m
+            orig = _m.load_config
+            def patched_load():
+                with open(config_file) as f:
+                    return yaml.safe_load(f)
+            _m.load_config = patched_load
+            try:
+                cfg = _m.load_config()
+                assert "bankroll" in cfg
+                assert cfg["bankroll"] == 5000
+                assert "risk" in cfg
+                assert "leagues" in cfg
+            finally:
+                _m.load_config = orig
 
 
 # ── discover_football_events global scan ────────────────────

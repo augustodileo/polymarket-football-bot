@@ -21,6 +21,9 @@ jobs:
       - name: Install dependencies
         run: uv sync
 
+      - name: Create config for tests
+        run: cp config.example.yaml config.yaml
+
       - name: Run tests
         run: uv run pytest tests/ -v --cov=. --cov-report=term-missing
 
