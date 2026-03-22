@@ -1,0 +1,108 @@
+schemaVersion: "2.0.0"
+
+# ── File existence ──────────────────────────────────────
+
+fileExistenceTests:
+  # Source code
+  - name: "src/main.py exists"
+    path: "/app/src/main.py"
+    shouldExist: true
+  - name: "src/engine.py exists"
+    path: "/app/src/engine.py"
+    shouldExist: true
+  - name: "src/analyze.py exists"
+    path: "/app/src/analyze.py"
+    shouldExist: true
+  - name: "src/__init__.py exists"
+    path: "/app/src/__init__.py"
+    shouldExist: true
+
+  # Version file (injected at build time)
+  - name: "VERSION file exists"
+    path: "/app/VERSION"
+    shouldExist: true
+
+  # Dependencies
+  - name: "pyproject.toml exists"
+    path: "/app/pyproject.toml"
+    shouldExist: true
+  - name: "uv installed"
+    path: "/usr/local/bin/uv"
+    shouldExist: true
+
+  # Data directory
+  - name: "data directory exists"
+    path: "/app/data"
+    shouldExist: true
+    isDirectory: true
+
+  # Security: secrets NOT baked in
+  - name: "config.yaml NOT in image"
+    path: "/app/config.yaml"
+    shouldExist: false
+  - name: "config.example.yaml NOT in image"
+    path: "/app/config.example.yaml"
+    shouldExist: false
+  - name: ".env NOT in image"
+    path: "/app/.env"
+    shouldExist: false
+  - name: ".git NOT in image"
+    path: "/app/.git"
+    shouldExist: false
+
+  # Dead files should not exist
+  - name: "stats.py deleted"
+    path: "/app/src/stats.py"
+    shouldExist: false
+  - name: "historical.py deleted"
+    path: "/app/src/historical.py"
+    shouldExist: false
+  - name: "historical.py not in root"
+    path: "/app/historical.py"
+    shouldExist: false
+
+# ── File content ────────────────────────────────────────
+
+fileContentTests:
+  - name: "VERSION contains version string"
+    path: "/app/VERSION"
+    expectedContents: ["v"]
+
+# ── Command tests ───────────────────────────────────────
+
+commandTests:
+  - name: "Python 3.12 available"
+    command: "python"
+    args: ["--version"]
+    expectedOutput: ["3.12"]
+
+  - name: "uv available"
+    command: "uv"
+    args: ["--version"]
+    expectedOutput: ["uv"]
+
+  - name: "Bot shows help"
+    command: "uv"
+    args: ["run", "python", "src/main.py", "--help"]
+    expectedOutput: ["--paper", "--live", "--ephemeral"]
+
+  - name: "Engine importable"
+    command: "uv"
+    args: ["run", "python", "-c", "import sys; sys.path.insert(0, 'src'); from engine import evaluate; print('OK')"]
+    expectedOutput: ["OK"]
+
+  - name: "Analyze importable"
+    command: "uv"
+    args: ["run", "python", "-c", "import sys; sys.path.insert(0, 'src'); from analyze import load_trades; print('OK')"]
+    expectedOutput: ["OK"]
+
+# ── Metadata ────────────────────────────────────────────
+
+metadataTest:
+  envVars:
+    - key: "PYTHONUNBUFFERED"
+      value: "1"
+  workdir: "/app"
+  entrypoint: ["uv", "run", "python", "src/main.py"]
+  cmd: ["--paper"]
+  volumes: ["/app/data"]

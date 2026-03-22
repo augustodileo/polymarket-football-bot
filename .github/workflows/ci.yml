@@ -36,12 +36,21 @@ jobs:
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0
-      - name: Build & smoke test
+
+      - name: Build Docker image
         run: |
           VERSION=$(git describe --tags --always 2>/dev/null || echo dev)
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
           docker build --build-arg VERSION=$VERSION -t poly-bot:$VERSION .
-          cp config.example.yaml config.yaml
-          docker run --rm -v $(pwd)/config.yaml:/app/config.yaml poly-bot:$VERSION --ephemeral &
-          sleep 30
-          kill $! 2>/dev/null || true
-          echo "Docker smoke test passed"
+
+      - name: Install container-structure-test
+        run: |
+          curl -LO https://github.com/GoogleContainerTools/container-structure-test/releases/latest/download/container-structure-test-linux-amd64
+          chmod +x container-structure-test-linux-amd64
+          sudo mv container-structure-test-linux-amd64 /usr/local/bin/container-structure-test
+
+      - name: Run container structure tests
+        run: |
+          container-structure-test test \
+            --image poly-bot:${{ env.VERSION }} \
+            --config container-structure-test.yaml
