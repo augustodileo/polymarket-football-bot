@@ -1,0 +1,72 @@
+# ============================================================
+# Polymarket Football Bot — Configuration
+# ============================================================
+# Copy this file to config.yaml and edit:
+#   cp config.example.yaml config.yaml
+
+# --- Bankroll ---
+bankroll: 10000
+
+# --- Polymarket Wallet (only needed for --live mode) ---
+# Uncomment and fill in for live trading:
+# polymarket_private_key: "your_hex_key_without_0x"
+# polymarket_funder: "0xYourWalletAddress"
+
+# --- Risk Limits ---
+risk:
+  max_daily_loss: 500
+  max_single_stake: 1000
+  max_concurrent_positions: 5
+  min_edge_pct: 2.0
+  kelly_fraction: 0.25
+
+# --- Strategy ---
+strategy:
+  min_minute: 80
+  pre_fetch_minute: 78
+  poll_interval_sec: 30
+
+# --- Tier Mismatch (pre-match only) ---
+tier_mismatch:
+  enabled: true
+  min_favorite_prob: 0.70
+  max_underdog_prob: 0.15
+  pre_match: true
+  pre_match_bet_minutes_before: 30
+  pre_match_min_edge_pct: 2.0
+
+# --- Auto Redemption ---
+auto_redeem: true
+
+# --- Leagues ---
+leagues:
+  epl:
+    polymarket_tag: 82
+    name: "Premier League"
+  la_liga:
+    polymarket_tag: 780
+    name: "La Liga"
+  serie_a:
+    polymarket_tag: 101962
+    name: "Serie A"
+  bundesliga:
+    polymarket_tag: 1494
+    name: "Bundesliga"
+  ligue_1:
+    polymarket_tag: 102070
+    name: "Ligue 1"
+  champions_league:
+    polymarket_tag: 100977
+    name: "Champions League"
+  europa_league:
+    polymarket_tag: 101787
+    name: "Europa League"
+  mls:
+    polymarket_tag: 100100
+    name: "MLS"
+  eredivisie:
+    polymarket_tag: 101735
+    name: "Eredivisie"
+  liga_portugal:
+    polymarket_tag: 101772
+    name: "Liga Portugal"

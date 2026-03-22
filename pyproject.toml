@@ -1,0 +1,12 @@
+[project]
+name = "polymarket-football-bot"
+version = "0.1.0"
+description = "Automated Polymarket football trading bot — 80+ minute strategy"
+requires-python = ">=3.12"
+dependencies = [
+    "polymarket-apis>=0.2.0",
+    "requests>=2.31.0",
+    "pyyaml>=6.0",
+    "websockets>=12.0",
+    "pytest-cov>=7.1.0",
+]

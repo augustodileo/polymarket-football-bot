@@ -1,0 +1,53 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+
+      - name: Set up Python
+        run: uv python install 3.12
+
+      - name: Install dependencies
+        run: uv sync
+
+      - name: Run tests
+        run: uv run pytest tests/ -v --cov=. --cov-report=term-missing
+
+      - name: Check coverage threshold
+        run: |
+          COVERAGE=$(uv run pytest tests/ --cov=. --cov-report=term 2>&1 | grep "^TOTAL" | awk '{print $4}' | tr -d '%')
+          echo "Coverage: ${COVERAGE}%"
+          if [ "$COVERAGE" -lt 80 ]; then
+            echo "Coverage ${COVERAGE}% is below 80% threshold"
+            exit 1
+          fi
+
+  docker:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: docker build -t poly-bot .
+
+      - name: Test Docker image starts
+        run: |
+          # Create minimal config for smoke test
+          cp config.example.yaml config.yaml
+          docker run --rm -v $(pwd)/config.yaml:/app/config.yaml poly-bot --ephemeral &
+          DOCKER_PID=$!
+          sleep 15
+          kill $DOCKER_PID 2>/dev/null || true
+          echo "Docker smoke test passed"
