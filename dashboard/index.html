@@ -40,7 +40,7 @@
         <p class="updated" id="updated"></p>
 
         <div class="cards">
-            <div class="card"><div class="label">Total P&L</div><div class="value green" id="pnl">-</div></div>
+            <div class="card" style="cursor:pointer" onclick="togglePnlMode()"><div class="label">Total PnL <span style="font-size:10px;color:#8b949e">(click to toggle)</span></div><div class="value green" id="pnl">-</div></div>
             <div class="card"><div class="label">Record</div><div class="value blue" id="record">-</div></div>
             <div class="card"><div class="label">Win Rate</div><div class="value" id="winrate">-</div></div>
             <div class="card"><div class="label">ROI</div><div class="value" id="roi">-</div></div>
@@ -49,14 +49,22 @@
         </div>
 
         <div class="chart-container">
-            <h2>Cumulative P&L</h2>
+            <h2>Cumulative PnL</h2>
             <canvas id="pnlChart" height="80"></canvas>
         </div>
 
         <div class="open-positions" id="openSection" style="display:none">
             <h2>Open Positions</h2>
             <table id="openTable">
-                <thead><tr><th>Match</th><th>Side</th><th>Entry</th><th>Stake</th><th>Edge</th></tr></thead>
+                <thead><tr><th>Match</th><th>Bet</th><th>Entry</th><th>Stake</th><th>Edge</th><th>Win/Lose</th></tr></thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+        <div class="open-positions" id="schedSection" style="display:none">
+            <h2>Scheduled Pre-Match Bets</h2>
+            <table id="schedTable">
+                <thead><tr><th>Match</th><th>Favorite</th><th>Underdog (betting NO)</th><th>Fav %</th><th>Kickoff</th><th>Bet At</th></tr></thead>
                 <tbody></tbody>
             </table>
         </div>
@@ -74,7 +82,7 @@
                 <input type="date" id="filterDate" />
             </div>
             <table id="tradesTable">
-                <thead><tr><th>Date</th><th>Match</th><th>League</th><th>Side</th><th>Score</th><th>Edge</th><th>Stake</th><th>Result</th><th>P&L</th></tr></thead>
+                <thead><tr><th>Date</th><th>Match</th><th>League</th><th>Bet</th><th>Score</th><th>Edge</th><th>Stake</th><th>Result</th><th>PnL</th></tr></thead>
                 <tbody></tbody>
             </table>
         </div>
@@ -83,6 +91,21 @@
     <script>
         const DATA_URL = 'dashboard-data.json';
         let allData = null;
+        let pnlMode = '$';  // '$' or '%'
+
+        function togglePnlMode() {
+            pnlMode = pnlMode === '$' ? '%' : '$';
+            if (allData) {
+                const s = allData.summary;
+                const pnlEl = document.getElementById('pnl');
+                if (pnlMode === '$') {
+                    pnlEl.textContent = '$' + s.total_pnl.toLocaleString(undefined, {minimumFractionDigits: 2});
+                } else {
+                    pnlEl.textContent = (s.roi >= 0 ? '+' : '') + s.roi + '%';
+                }
+                pnlEl.className = 'value ' + (s.total_pnl >= 0 ? 'green' : 'red');
+            }
+        }
 
         async function fetchData() {
             try {
@@ -174,12 +197,31 @@
                 tbody.innerHTML = allData.open_positions.map(p => `
                     <tr>
                         <td>${p.event}</td>
-                        <td>${p.side}</td>
+                        <td>${p.side} on "${p.market}"</td>
                         <td>${p.score_at_entry} min ${p.minute}</td>
                         <td>$${p.stake.toFixed(0)}</td>
                         <td>${p.edge_pct.toFixed(1)}%</td>
+                        <td class="win">+$${(p.profit_if_win || 0).toFixed(0)}</td>
                     </tr>
                 `).join('');
+            }
+
+            // Scheduled pre-match bets
+            if ((allData.scheduled_bets || []).length > 0) {
+                document.getElementById('schedSection').style.display = 'block';
+                const stbody = document.querySelector('#schedTable tbody');
+                stbody.innerHTML = allData.scheduled_bets.map(s => {
+                    const ko = s.kickoff ? new Date(s.kickoff).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'}) : '-';
+                    const ba = s.bet_at ? new Date(s.bet_at).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'}) : '-';
+                    return `<tr>
+                        <td>${s.event}</td>
+                        <td>${s.fav_team}</td>
+                        <td>${s.underdog_team} (NO)</td>
+                        <td>${(s.fav_prob * 100).toFixed(0)}%</td>
+                        <td>${ko}</td>
+                        <td>${ba}</td>
+                    </tr>`;
+                }).join('');
             }
 
             // Populate league filter
@@ -208,19 +250,20 @@
             if (date) trades = trades.filter(t => (t.timestamp || '').startsWith(date));
 
             const tbody = document.querySelector('#tradesTable tbody');
-            tbody.innerHTML = trades.map(t => `
-                <tr>
+            tbody.innerHTML = trades.map(t => {
+                const bet = t.market ? `${t.side} on "${t.market}"` : t.side;
+                return `<tr>
                     <td>${(t.timestamp || '').slice(0, 10)}</td>
                     <td>${t.event}</td>
                     <td>${t.league || '-'}</td>
-                    <td>${t.side}</td>
+                    <td>${bet}</td>
                     <td>${t.score_at_entry || '-'} → ${t.final_score || '-'}</td>
                     <td>${t.edge_pct}%</td>
                     <td>$${t.stake.toFixed(0)}</td>
                     <td class="${t.outcome === 'WIN' ? 'win' : 'loss'}">${t.outcome}</td>
                     <td class="${t.pnl >= 0 ? 'win' : 'loss'}">$${t.pnl >= 0 ? '+' : ''}${t.pnl.toFixed(2)}</td>
-                </tr>
-            `).join('');
+                </tr>`;
+            }).join('');
         }
 
         fetchData();

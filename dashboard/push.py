@@ -71,6 +71,7 @@ def build_dashboard_data() -> dict:
             "cumulative": round(running, 2),
             "outcome": t.get("outcome", ""),
             "side": t.get("side", ""),
+            "market": t.get("market", ""),
             "edge_pct": round(t.get("edge_pct", 0), 1),
             "stake": round(t.get("stake", 0), 2),
             "league": t.get("league", ""),
@@ -118,6 +119,20 @@ def build_dashboard_data() -> dict:
             "edge_pct": pos.get("edge_pct", 0),
             "score_at_entry": pos.get("score_at_entry", ""),
             "minute": pos.get("minute", 0),
+            "profit_if_win": pos.get("profit_if_win", 0),
+            "loss_if_lose": pos.get("loss_if_lose", 0),
+        })
+
+    # Scheduled pre-match bets
+    scheduled_bets = []
+    for eid, sched in state.get("scheduled_bets", {}).items():
+        scheduled_bets.append({
+            "event": sched.get("event_title", ""),
+            "fav_team": sched.get("fav_team", ""),
+            "underdog_team": sched.get("underdog_team", ""),
+            "fav_prob": sched.get("fav_prob", 0),
+            "kickoff": sched.get("kickoff", ""),
+            "bet_at": sched.get("bet_at", ""),
         })
 
     return {
@@ -132,6 +147,7 @@ def build_dashboard_data() -> dict:
             "roi": round(total_pnl / total_staked * 100, 1) if total_staked > 0 else 0,
         },
         "open_positions": open_positions,
+        "scheduled_bets": scheduled_bets,
         "pnl_curve": pnl_curve,
         "by_league": by_league,
         "by_day": by_day,

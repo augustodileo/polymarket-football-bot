@@ -92,8 +92,21 @@ def save_state():
     is killed mid-write.
     """
     TRADES_DIR.mkdir(exist_ok=True)
+    # Build serializable scheduled bets
+    scheduled = {}
+    for eid, sched in _pre_match_scheduled.items():
+        scheduled[str(eid)] = {
+            "event_title": sched.get("event_title", ""),
+            "fav_team": sched.get("fav_team", ""),
+            "underdog_team": sched.get("underdog_team", ""),
+            "fav_prob": sched.get("fav_prob", 0),
+            "kickoff": sched["kickoff"].isoformat() if hasattr(sched.get("kickoff", ""), "isoformat") else str(sched.get("kickoff", "")),
+            "bet_at": sched["bet_at"].isoformat() if hasattr(sched.get("bet_at", ""), "isoformat") else str(sched.get("bet_at", "")),
+        }
+
     state = {
         "open_positions": {str(k): v for k, v in _open_positions.items()},
+        "scheduled_bets": scheduled,
         "cumulative_pnl": _session_pnl,
         "cumulative_wins": _session_wins,
         "cumulative_losses": _session_losses,
@@ -1371,6 +1384,8 @@ def run_loop(config: dict, mode: str):
         except Exception as e:
             log.error(f"Error in main loop: {e}", exc_info=True)
 
+        # Save state every cycle so dashboard sidecar has fresh data
+        save_state()
         time.sleep(poll_sec)
 
 
