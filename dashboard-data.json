@@ -1,28 +1,15 @@
 {
-  "updated_at": "2026-03-22T22:53:07.027496+00:00",
+  "updated_at": "2026-03-22T22:58:07.683261+00:00",
   "summary": {
-    "total_trades": 21,
-    "wins": 18,
+    "total_trades": 22,
+    "wins": 19,
     "losses": 3,
-    "win_rate": 85.7,
-    "total_pnl": -1273.39,
-    "total_staked": 20022.43,
-    "roi": -6.4
+    "win_rate": 86.4,
+    "total_pnl": -1192.32,
+    "total_staked": 21022.43,
+    "roi": -5.7
   },
-  "open_positions": [
-    {
-      "event": "Portland Timbers vs. Los Angeles Galaxy",
-      "side": "NO",
-      "market": "Will Portland Timbers win on 2026-03-22?",
-      "stake": 1000,
-      "entry_price": 0.925,
-      "edge_pct": 4.481218355383831,
-      "score_at_entry": "1-1",
-      "minute": 80,
-      "profit_if_win": 81.07,
-      "loss_if_lose": 999.93
-    }
-  ],
+  "open_positions": [],
   "scheduled_bets": [],
   "pnl_curve": [
     {
@@ -360,6 +347,22 @@
       "score_at_entry": "2-3",
       "final_score": "4-3",
       "minute": 81
+    },
+    {
+      "timestamp": "2026-03-22T22:53:46.209936+00:00",
+      "event": "Portland Timbers vs. Los Angeles Galaxy",
+      "pnl": 81.07,
+      "cumulative": -1192.32,
+      "outcome": "WIN",
+      "side": "NO",
+      "market": "Will Portland Timbers win on 2026-03-22?",
+      "edge_pct": 4.5,
+      "stake": 1000,
+      "league": "MLS",
+      "trade_type": "STANDARD",
+      "score_at_entry": "1-1",
+      "final_score": "1-1",
+      "minute": 80
     }
   ],
   "by_league": {
@@ -384,9 +387,9 @@
       "pnl": 176.95
     },
     "MLS": {
-      "trades": 7,
-      "wins": 6,
-      "pnl": -413.19
+      "trades": 8,
+      "wins": 7,
+      "pnl": -332.12
     },
     "Eredivisie": {
       "trades": 3,
@@ -411,9 +414,9 @@
       "pnl": 455.08
     },
     "2026-03-22": {
-      "trades": 17,
-      "wins": 14,
-      "pnl": -1728.47
+      "trades": 18,
+      "wins": 15,
+      "pnl": -1647.4
     }
   }
 }
