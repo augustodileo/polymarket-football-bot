@@ -73,6 +73,16 @@
             td, th { padding: 5px 4px; }
             td { max-width: 120px; }
             .chart-container { padding: 10px; }
+            .filters { flex-direction: column; }
+            .filters select, .filters input { width: 100%; flex: none; }
+        }
+        /* Date input: show placeholder text on iOS/Safari */
+        input[type="date"] { position: relative; }
+        input[type="date"]:not(:focus):not(:valid)::before {
+            content: attr(placeholder);
+            color: #8b949e;
+            position: absolute; left: 10px; top: 50%; transform: translateY(-50%);
+            pointer-events: none;
         }
     </style>
 </head>
@@ -93,7 +103,7 @@
 
         <div class="chart-container">
             <h2>Cumulative PnL</h2>
-            <canvas id="pnlChart" height="80"></canvas>
+            <canvas id="pnlChart"></canvas>
         </div>
 
         <div class="open-positions" id="openSection" style="display:none">
@@ -117,8 +127,8 @@
         </div>
 
         <div class="chart-container">
-            <h2>P&L by League</h2>
-            <canvas id="leagueChart" height="60"></canvas>
+            <h2>PnL by League</h2>
+            <canvas id="leagueChart"></canvas>
         </div>
 
         <div class="chart-container">
@@ -126,7 +136,7 @@
             <div class="filters">
                 <select id="filterLeague"><option value="">All Leagues</option></select>
                 <select id="filterOutcome"><option value="">All</option><option value="WIN">Wins</option><option value="LOSS">Losses</option></select>
-                <input type="date" id="filterDate" />
+                <input type="date" id="filterDate" placeholder="Filter by date" title="Filter by date" />
             </div>
             <div class="table-wrap">
                 <table id="tradesTable">
@@ -183,25 +193,35 @@
             document.getElementById('open').textContent = allData.open_positions.length;
             document.getElementById('updated').textContent = 'Updated: ' + new Date(allData.updated_at).toLocaleString();
 
-            // P&L Chart
+            // Responsive chart defaults
+            const isMobile = window.innerWidth < 500;
+            const tickFont = { size: isMobile ? 10 : 12 };
+            const pointSize = isMobile ? 3 : 5;
+
+            // PnL Chart
             const ctx = document.getElementById('pnlChart').getContext('2d');
             new Chart(ctx, {
                 type: 'line',
                 data: {
                     labels: allData.pnl_curve.map((t, i) => '#' + (i + 1)),
                     datasets: [{
-                        label: 'Cumulative P&L ($)',
+                        label: 'Cumulative PnL ($)',
                         data: allData.pnl_curve.map(t => t.cumulative),
-                        borderColor: '#3fb950',
+                        borderColor: allData.pnl_curve.length > 0 && allData.pnl_curve[allData.pnl_curve.length-1].cumulative >= 0 ? '#3fb950' : '#f85149',
                         backgroundColor: 'rgba(63, 185, 80, 0.1)',
                         fill: true,
                         tension: 0.3,
+                        borderWidth: isMobile ? 2 : 3,
                         pointBackgroundColor: allData.pnl_curve.map(t => t.outcome === 'WIN' ? '#3fb950' : '#f85149'),
-                        pointRadius: 5,
+                        pointRadius: pointSize,
                     }]
                 },
                 options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    aspectRatio: isMobile ? 1.5 : 2.5,
                     plugins: {
+                        legend: { display: false },
                         tooltip: {
                             callbacks: {
                                 label: (ctx) => {
@@ -212,8 +232,8 @@
                         }
                     },
                     scales: {
-                        y: { grid: { color: '#21262d' }, ticks: { color: '#8b949e', callback: v => '$' + v } },
-                        x: { grid: { color: '#21262d' }, ticks: { color: '#8b949e' } }
+                        y: { grid: { color: '#21262d' }, ticks: { color: '#8b949e', font: tickFont, callback: v => '$' + v } },
+                        x: { grid: { color: '#21262d' }, ticks: { color: '#8b949e', font: tickFont, maxRotation: isMobile ? 0 : 45, autoSkip: true, maxTicksLimit: isMobile ? 8 : 20 } }
                     }
                 }
             });
@@ -226,15 +246,20 @@
                 data: {
                     labels: leagues.map(l => l[0]),
                     datasets: [{
-                        label: 'P&L ($)',
+                        label: 'PnL ($)',
                         data: leagues.map(l => l[1].pnl),
                         backgroundColor: leagues.map(l => l[1].pnl >= 0 ? '#3fb950' : '#f85149'),
                     }]
                 },
                 options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    aspectRatio: isMobile ? 1.2 : 2.5,
+                    indexAxis: isMobile ? 'y' : 'x',
+                    plugins: { legend: { display: false } },
                     scales: {
-                        y: { grid: { color: '#21262d' }, ticks: { color: '#8b949e', callback: v => '$' + v } },
-                        x: { grid: { color: '#21262d' }, ticks: { color: '#8b949e' } }
+                        y: { grid: { color: '#21262d' }, ticks: { color: '#8b949e', font: tickFont, callback: isMobile ? undefined : (v => '$' + v) } },
+                        x: { grid: { color: '#21262d' }, ticks: { color: '#8b949e', font: tickFont, callback: isMobile ? (v => '$' + v) : undefined } }
                     }
                 }
             });
