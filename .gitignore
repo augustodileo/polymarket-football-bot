@@ -8,3 +8,7 @@ config.yaml
 .coverage
 *.egg-info/
 VERSION
+node_modules/
+test-results/
+dashboard-data.json
+package*.json
