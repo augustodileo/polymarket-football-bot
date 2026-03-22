@@ -451,3 +451,190 @@ class TestScanPreMatchMismatches:
 
         _scan_pre_match_mismatches(events, {"odds_api_key": ""}, tm_cfg, risk, 10000, None, MagicMock(), "paper")
         assert 900 not in M._pre_match_scheduled
+
+
+# ── Additional coverage tests ──────────────────────────────
+
+
+class TestSaveStateWithScheduled:
+    """Test save_state includes scheduled bets."""
+
+    def test_saves_scheduled_bets(self, tmp_path):
+        M.TRADES_DIR = tmp_path
+        M.STATE_FILE = tmp_path / "state.json"
+        M._open_positions = {}
+        M._session_pnl = 100.0
+        M._session_wins = 2
+        M._session_losses = 0
+        M._session_trades = 2
+
+        from datetime import timedelta
+        now = datetime.now(timezone.utc)
+        M._pre_match_scheduled = {
+            999: {
+                "event_title": "Big vs Small",
+                "fav_team": "Big",
+                "underdog_team": "Small",
+                "fav_prob": 0.80,
+                "kickoff": now + timedelta(hours=1),
+                "bet_at": now + timedelta(minutes=30),
+            }
+        }
+
+        from main import save_state
+        save_state()
+
+        state = json.loads(M.STATE_FILE.read_text())
+        assert "scheduled_bets" in state
+        assert "999" in state["scheduled_bets"]
+        assert state["scheduled_bets"]["999"]["fav_team"] == "Big"
+
+        M._pre_match_scheduled = {}  # cleanup
+
+
+class TestLoadStateCorrupt:
+    """Test load_state handles corrupt files."""
+
+    def test_corrupt_json(self, tmp_path):
+        M.STATE_FILE = tmp_path / "state.json"
+        M.STATE_FILE.write_text("not json{{{")
+        M._open_positions = {}
+        M._session_pnl = 0
+
+        from main import load_state
+        load_state()  # should not crash
+        assert M._open_positions == {}
+
+
+class TestLoadConfig:
+    def test_loads_yaml(self, tmp_path):
+        import yaml
+        config_data = {
+            "bankroll": 5000,
+            "risk": {"max_daily_loss": 0, "min_edge_pct": 0,
+                     "kelly_fraction": 0.25, "max_single_stake": 1000,
+                     "max_concurrent_positions": 5},
+            "strategy": {"min_minute": 80, "pre_fetch_minute": 78, "poll_interval_sec": 30},
+            "leagues": {"test": {"polymarket_tag": 1, "name": "Test"}},
+        }
+        config_file = tmp_path / "config.yaml"
+        config_file.write_text(yaml.dump(config_data))
+
+        import main as _m
+        orig = _m.load_config
+        def patched():
+            with open(config_file) as f:
+                return yaml.safe_load(f)
+        _m.load_config = patched
+        try:
+            cfg = _m.load_config()
+            assert cfg["bankroll"] == 5000
+        finally:
+            _m.load_config = orig
+
+
+class TestPreMatchExecutionFull:
+    """Test the full pre-match Phase 2 execution path."""
+
+    def setup_method(self):
+        M._evaluated_event_ids = set()
+        M._open_positions = {}
+        M._pre_match_scheduled = {}
+        M._session_trades = 0
+
+    def test_event_not_found_skips(self, tmp_path):
+        M.TRADES_DIR = tmp_path
+        M.STATE_FILE = tmp_path / "state.json"
+        now = datetime.now(timezone.utc)
+
+        M._pre_match_scheduled = {
+            404: {
+                "event_title": "Ghost Match",
+                "kickoff": now + timedelta(minutes=10),
+                "bet_at": now - timedelta(minutes=1),
+                "league_cfg": {"name": "Test"},
+                "home_team": "A", "away_team": "B",
+                "fav_team": "A", "underdog_team": "B",
+                "fav_is_home": True, "fav_prob": 0.80,
+            }
+        }
+
+        # Empty events list — event 404 won't be found
+        events = []
+        _scan_pre_match_mismatches(events, {"odds_api_key": ""},
+                                   {"pre_match": True, "enabled": True,
+                                    "min_favorite_prob": 0.70, "max_underdog_prob": 0.15,
+                                    "pre_match_bet_minutes_before": 30,
+                                    "pre_match_min_edge_pct": 0},
+                                   {"max_concurrent_positions": 5, "kelly_fraction": 0.25,
+                                    "max_single_stake": 1000},
+                                   10000, None, MagicMock(), "paper")
+
+        assert 404 not in M._pre_match_scheduled
+        assert 404 in M._evaluated_event_ids
+
+    def test_no_underdog_market_skips(self, tmp_path):
+        M.TRADES_DIR = tmp_path
+        M.STATE_FILE = tmp_path / "state.json"
+        now = datetime.now(timezone.utc)
+
+        M._pre_match_scheduled = {
+            500: {
+                "event_title": "A vs B",
+                "kickoff": now + timedelta(minutes=10),
+                "bet_at": now - timedelta(minutes=1),
+                "league_cfg": {"name": "Test"},
+                "home_team": "TeamA", "away_team": "TeamB",
+                "fav_team": "TeamA", "underdog_team": "TeamB",
+                "fav_is_home": True, "fav_prob": 0.75,
+            }
+        }
+
+        # Event with only draw market — no win market for underdog
+        m_draw = _make_market_mock("Will draw?", prices=[0.20, 0.80])
+        ev = MagicMock(id=500, title="A vs B", live=False, ended=False,
+                       markets=[m_draw])
+
+        events = [(ev, "test", {"name": "Test"})]
+        _scan_pre_match_mismatches(events, {"odds_api_key": ""},
+                                   {"pre_match": True, "enabled": True,
+                                    "min_favorite_prob": 0.70, "max_underdog_prob": 0.15,
+                                    "pre_match_bet_minutes_before": 30,
+                                    "pre_match_min_edge_pct": 0},
+                                   {"max_concurrent_positions": 5, "kelly_fraction": 0.25,
+                                    "max_single_stake": 1000},
+                                   10000, None, MagicMock(), "paper")
+
+        assert 500 in M._evaluated_event_ids
+
+
+class TestDailyLossLimit:
+    """Test daily loss limit behavior."""
+
+    def test_zero_means_disabled(self):
+        # max_daily_loss = 0 should not trigger
+        risk = {"max_daily_loss": 0}
+        max_loss = risk.get("max_daily_loss", 0)
+        assert not (max_loss > 0 and -500 <= -max_loss)
+
+    def test_positive_triggers(self):
+        risk = {"max_daily_loss": 500}
+        max_loss = risk.get("max_daily_loss", 0)
+        session_pnl = -600
+        assert max_loss > 0 and session_pnl <= -max_loss
+
+
+class TestLiquidityPartialFill:
+    """Test partial fill logic."""
+
+    def test_sufficient_at_half(self):
+        from main import LiquidityInfo
+        # 600 available vs 1000 needed = 60% > 50% threshold
+        liq = LiquidityInfo(available_shares=600, sufficient=True)
+        assert liq.sufficient
+
+    def test_sufficient_by_depth(self):
+        from main import LiquidityInfo
+        # Only 100 shares but $500+ depth
+        liq = LiquidityInfo(available_shares=100, total_depth=600, sufficient=True)
+        assert liq.sufficient

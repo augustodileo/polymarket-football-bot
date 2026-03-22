@@ -358,3 +358,90 @@ class TestFullResolutionFlow:
 
         # State saved
         assert M.STATE_FILE.exists()
+
+
+class TestRunLoopOneCycle:
+    """Test run_loop by mocking discover to raise KeyboardInterrupt after one cycle."""
+
+    def test_paper_mode_full_cycle(self, tmp_path):
+        M.BASE_DIR = tmp_path
+        M._open_positions = {}
+        M._evaluated_event_ids = set()
+        M._session_pnl = 0
+        M._session_wins = 0
+        M._session_losses = 0
+        M._session_trades = 0
+        M._pre_match_scheduled = {}
+
+        config = {
+            "bankroll": 10000,
+            "polymarket_private_key": "",
+            "polymarket_funder": "",
+            "risk": {
+                "max_daily_loss": 0, "max_single_stake": 1000,
+                "max_concurrent_positions": 5, "min_edge_pct": 0,
+                "kelly_fraction": 0.25,
+            },
+            "strategy": {"min_minute": 80, "pre_fetch_minute": 78, "poll_interval_sec": 30},
+            "tier_mismatch": {"enabled": False},
+            "auto_redeem": True,
+            "leagues": {"test": {"polymarket_tag": 1, "name": "Test"}},
+        }
+
+        m_home = _mk_market("Will Home win?", [0.90, 0.10], tokens=["hy", "hn"])
+        m_draw = _mk_market("Will draw?", [0.05, 0.95])
+        m_away = _mk_market("Will Away win?", [0.05, 0.95], tokens=["ay", "an"])
+        ev = _mk_event(999, "Home vs. Away", live=True, score="2-0",
+                        elapsed="85", markets=[m_home, m_draw, m_away])
+
+        mock_gamma = MagicMock()
+        call_count = [0]
+        def get_events(**kwargs):
+            call_count[0] += 1
+            if call_count[0] > 2:
+                raise KeyboardInterrupt()
+            return [ev]
+        mock_gamma.get_events.side_effect = get_events
+
+        mock_clob_ro = MagicMock()
+        mid = MagicMock(value=0.90)
+        mock_clob_ro.get_midpoint.return_value = mid
+        book = MagicMock(asks=[], bids=[])
+        mock_clob_ro.get_order_book.return_value = book
+
+        with patch("main.PolymarketGammaClient", return_value=mock_gamma), \
+             patch("main.PolymarketReadOnlyClobClient", return_value=mock_clob_ro), \
+             patch("polymarket_apis.PolymarketWeb3Client"):
+            run_loop(config, "paper")
+
+        state_file = tmp_path / "paper" / "state.json"
+        assert state_file.exists()
+
+    def test_live_mode_initializes_clients(self, tmp_path):
+        M.BASE_DIR = tmp_path
+
+        config = {
+            "bankroll": 5000,
+            "polymarket_private_key": "0xdeadbeef",
+            "polymarket_funder": "0xAddress",
+            "risk": {"max_daily_loss": 0, "max_single_stake": 1000,
+                     "max_concurrent_positions": 5, "min_edge_pct": 0,
+                     "kelly_fraction": 0.25},
+            "strategy": {"min_minute": 80, "pre_fetch_minute": 78, "poll_interval_sec": 30},
+            "tier_mismatch": {"enabled": False},
+            "auto_redeem": True,
+            "leagues": {},
+        }
+
+        mock_gamma = MagicMock()
+        mock_gamma.get_events.side_effect = KeyboardInterrupt()
+
+        with patch("main.PolymarketGammaClient", return_value=mock_gamma), \
+             patch("main.PolymarketReadOnlyClobClient"), \
+             patch("main.PolymarketClobClient") as mock_clob, \
+             patch("polymarket_apis.PolymarketWeb3Client") as mock_web3:
+            run_loop(config, "live")
+
+        mock_clob.assert_called_once()
+        mock_web3.assert_called_once()
+
