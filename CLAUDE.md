@@ -21,11 +21,10 @@ dashboard/
     playwright.config.js  — Playwright configuration
 .github/
   workflows/
-    ci.yml             — Every push: Python tests + Docker build + container-structure-test + Playwright
-    release.yml        — On v* tag: CI → GitHub Release → Deploy → Smoke test
-    deploy.yml         — Manual deploy (workflow_dispatch)
-    smoke-test.yml     — Post-deploy health check (reusable)
-    pages.yml          — Deploy dashboard HTML to gh-pages (preserves data)
+    ci.yml         — Every push/PR + reusable: Python tests + Docker + container-structure-test + Playwright
+    release.yml    — On v* tag: CI → GitHub Release → Deploy + smoke test (single workflow)
+    deploy.yml     — Manual deploy + smoke test (workflow_dispatch, for hotfixes)
+    pages.yml      — Deploy dashboard HTML to gh-pages (preserves dashboard-data.json)
   deploy.sh            — Shared deploy script (DRY, used by release + manual deploy)
 config.example.yaml    — Template config (committed, no secrets)
 config.yaml            — Real config (gitignored, mounted at runtime)
@@ -64,13 +63,17 @@ Validates: files exist in image, secrets NOT baked in, Python/uv work, bot help 
 
 ### What's tested where
 
-| Layer | Tool | Tests | What |
-|-------|------|-------|------|
-| Decision engine | pytest | 40 | Probability model, market matching, Kelly sizing |
-| Orchestration | pytest | 70 | Parsing, state, resolution, liquidity, pre-match |
-| Analysis | pytest | 21 | Trade loading, filters, summaries |
-| Docker image | container-structure-test | 23 | Files, env vars, entrypoint, no secrets |
-| Dashboard UI | Playwright | 22 | Cards, charts, filters, mobile, no JS errors |
+| Layer | Tool | File | Tests | What |
+|-------|------|------|-------|------|
+| Engine | pytest | test_engine.py | 38 | Probability model, market matching, Kelly sizing |
+| Main logic | pytest | test_main.py | 35 | Parsing, team matching, mismatch detection, outcome, state |
+| Orchestration | pytest | test_orchestration.py | 34 | Discovery, resolution, liquidity, redemption, display |
+| Edge cases | pytest | test_coverage.py | 24 | Error paths, pre-match scanner, global scan, partial fills |
+| Analysis | pytest | test_analyze.py | 21 | Trade loading, date filters, summaries, wipe |
+| Run loop | pytest | test_run_loop.py | 11 | Pre-match execution, daily scan, full resolution flow |
+| Docker image | container-structure-test | container-structure-test.yaml | 23 | Files, env vars, entrypoint, no secrets |
+| Dashboard UI | Playwright | dashboard.spec.js | 22 | Cards, charts, filters, mobile, no JS errors |
+| **Total** | | | **208** | |
 
 ## Versioning
 
@@ -84,12 +87,14 @@ A `VERSION` file is generated at build/run time from `git describe --tags`. The 
 
 ## CI/CD Pipeline
 
+4 workflows total, no duplication. Smoke test is inlined into deploy steps (not a separate workflow).
+
 | Event | Workflow | Steps |
 |-------|----------|-------|
-| Every push/PR | CI | Python tests → coverage check → Docker build + structure test → Playwright |
-| Push `v*` tag | Release & Deploy | CI → `gh release create` → deploy.sh via SSH → smoke test |
-| Manual | Deploy | deploy.sh via SSH → smoke test |
-| Push to `dashboard/index.html` | Pages | Updates gh-pages branch (preserves dashboard-data.json) |
+| Every push/PR | ci.yml | Python tests → coverage → Docker build + structure test → Playwright dashboard tests |
+| Push `v*` tag | release.yml | Calls ci.yml → `gh release create` → deploy.sh + smoke test |
+| Manual trigger | deploy.yml | deploy.sh + smoke test (for hotfixes) |
+| Change `dashboard/index.html` | pages.yml | Checkout gh-pages → update only index.html → push (preserves data) |
 
 ### CI/CD gotchas
 
