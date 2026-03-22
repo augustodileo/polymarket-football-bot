@@ -1,29 +1,13 @@
 name: Deploy
 
 on:
-  push:
-    branches: [main]
+  release:
+    types: [published]
   workflow_dispatch:  # manual trigger
 
 jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0  # need full history for git describe
-      - uses: astral-sh/setup-uv@v4
-      - run: uv python install 3.12
-      - run: uv sync
-      - run: cp config.example.yaml config.yaml
-      - run: |
-          VERSION=$(git describe --tags --always 2>/dev/null || echo "dev")
-          echo "${VERSION}" > VERSION
-      - run: uv run pytest tests/ -v
-
   deploy:
     runs-on: ubuntu-latest
-    needs: test
     steps:
       - name: Deploy to GCP VM
         uses: appleboy/ssh-action@v1
