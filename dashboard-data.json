@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-03-22T22:33:35.570382+00:00",
+  "updated_at": "2026-03-22T22:38:36.150435+00:00",
   "summary": {
     "total_trades": 21,
     "wins": 18,
@@ -9,7 +9,20 @@
     "total_staked": 20022.43,
     "roi": -6.4
   },
-  "open_positions": [],
+  "open_positions": [
+    {
+      "event": "Portland Timbers vs. Los Angeles Galaxy",
+      "side": "NO",
+      "market": "Will Portland Timbers win on 2026-03-22?",
+      "stake": 1000,
+      "entry_price": 0.925,
+      "edge_pct": 4.481218355383831,
+      "score_at_entry": "1-1",
+      "minute": 80,
+      "profit_if_win": 81.07,
+      "loss_if_lose": 999.93
+    }
+  ],
   "scheduled_bets": [],
   "pnl_curve": [
     {
