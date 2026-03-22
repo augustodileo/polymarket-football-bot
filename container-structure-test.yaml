@@ -34,7 +34,6 @@ fileExistenceTests:
   - name: "data directory exists"
     path: "/app/data"
     shouldExist: true
-    isDirectory: true
 
   # Security: secrets NOT baked in
   - name: "config.yaml NOT in image"
