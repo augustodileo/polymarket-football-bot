@@ -1,0 +1,41 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:  # manual trigger
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v4
+      - run: uv python install 3.12
+      - run: uv sync
+      - run: cp config.example.yaml config.yaml
+      - run: uv run pytest tests/ -v
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - name: Deploy to GCP VM
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          script: |
+            cd ~/poly-bot
+            git pull origin main
+            sudo docker build -t poly-bot .
+            sudo docker stop poly-bot 2>/dev/null || true
+            sudo docker rm poly-bot 2>/dev/null || true
+            sudo docker run -d --restart=always \
+              -v $(pwd)/config.yaml:/app/config.yaml \
+              -v $(pwd)/data:/app/data \
+              --name poly-bot \
+              poly-bot --paper
+            sleep 5
+            sudo docker logs --tail 5 poly-bot
