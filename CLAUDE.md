@@ -2,93 +2,128 @@
 
 ## What This Is
 
-Automated football betting bot for Polymarket prediction markets. Runs in paper mode (simulated) or live mode (real money). Monitors live football matches across 10+ leagues and places bets based on deterministic rules — no LLM in the trading loop.
+Automated football betting bot for Polymarket prediction markets. Monitors live football matches across 10+ leagues and places bets based on deterministic rules — no LLM in the trading loop. Runs in paper (simulated), live (real money), or ephemeral (throwaway) mode.
 
 ## Architecture
 
-Single Python process, no Docker, no microservices. Uses `uv` for dependency management with Python 3.12.
+Single Python process in a Docker container. Deployed on GCP via GitHub Actions CI/CD.
 
 ```
 src/
   main.py      — Orchestrator: discovery, monitoring, scheduling, execution, P&L tracking
-  engine.py    — Decision engine: probability model (score + clock), edge calculation, Kelly sizing
+  engine.py    — Decision engine: probability model (score + clock + Polymarket prices)
   stats.py     — Data types (MatchStats, BookmakerOdds)
   analyze.py   — Trade performance analysis and reporting
-tests/         — Unit tests (163 tests, 87% coverage)
+tests/         — 163 unit tests, 87% coverage
 .github/
-  workflows/   — CI (every push), Release & Deploy (on tag), Deploy manual
-  deploy.sh    — Shared deploy script (DRY)
-config.example.yaml — Template config (no secrets)
-run.sh         — Launcher script (requires --paper, --live, or --ephemeral flag)
-Dockerfile     — Container image (version injected from git tag)
-data/
-  paper/       — Paper mode state + daily trade logs
-  live/        — Live mode state + daily trade logs
-  ephemeral/   — Throwaway runs, wiped on every start
-tests/         — Unit tests (134 tests, 80% coverage)
+  workflows/
+    ci.yml         — Every push: tests + coverage + Docker build
+    release.yml    — On v* tag: test → release → deploy → smoke test
+    deploy.yml     — Manual deploy (workflow_dispatch)
+    smoke-test.yml — Post-deploy health check (reusable)
+  deploy.sh        — Shared deploy script (DRY)
+config.example.yaml — Template config (no secrets, committed)
+config.yaml         — Real config (gitignored, mounted at runtime)
+run.sh              — Local launcher (--paper / --live / --ephemeral)
+Dockerfile          — Container image, version from git tag build arg
 ```
 
 ## Testing — MANDATORY
 
-**Run tests after EVERY code change.** This is not optional.
+**Run tests after EVERY code change.** Do not push if tests fail.
 
 ```bash
-uv run pytest tests/ -v                    # run all tests
-uv run pytest tests/ --cov=. --cov-report=term-missing  # with coverage
+uv run pytest tests/ -v                                   # run all
+uv run pytest tests/ --cov=. --cov-report=term-missing    # with coverage
 ```
 
-If any test fails, fix it before committing or deploying. Do not skip failing tests.
+CI enforces 80% minimum coverage. Branch protection requires test + docker jobs to pass.
 
-### Test structure
+### Test files
 
-- `tests/test_engine.py` — Probability model, market matching, full evaluate function, edge cases, Kelly sizing (31 tests, engine.py at 94%)
-- `tests/test_main.py` — Parsing, team-to-price mapping, mismatch detection, outcome resolution, state persistence, market conversion (35 tests)
-- `tests/test_orchestration.py` — Discovery, resolution, liquidity checks, order placement, redemption, print functions, trade logging (36 tests)
-- `tests/test_analyze.py` — Trade loading, date filtering, summaries, wipe, day listing (14 tests)
-- `tests/test_coverage.py` — Edge cases, error paths, global scan, cross-book liquidity, pre-match scanner, partial fills (18 tests)
+| File | What | Tests |
+|------|------|-------|
+| `test_engine.py` | Probability model, market matching, evaluate, Kelly | 40 |
+| `test_main.py` | Parsing, team matching, mismatch detection, state | 35 |
+| `test_orchestration.py` | Discovery, resolution, liquidity, redemption | 36 |
+| `test_analyze.py` | Trade loading, date filters, summaries, wipe | 21 |
+| `test_coverage.py` | Edge cases, error paths, pre-match scanner | 19 |
+| `test_run_loop.py` | Pre-match execution, daily scan, full flow | 12 |
 
 ### When adding new functionality
 
-1. Write the test first (or immediately after)
-2. Mock external APIs (Polymarket Gamma, CLOB) — never call real APIs in tests
-3. Run full suite: `uv run pytest tests/ -v`
-4. Check coverage didn't drop: `uv run pytest tests/ --cov=. --cov-report=term-missing`
+1. Write tests first or immediately after
+2. Mock external APIs — never call real Polymarket in tests
+3. Run full suite before pushing
+4. CI will block merge if tests fail or coverage drops below 80%
 
-### Known untested code
+## Versioning
 
-- `main.py run_loop()` (~400 lines) — the main while loop with real API calls. Tested via paper/ephemeral mode against live Polymarket data.
-- Integration between all components across multiple poll cycles — tested manually.
+**Git tags are the single source of truth.** No version in any file.
+
+```bash
+git tag v1.3.0
+git push --tags
+```
+
+This triggers: CI → Release (with changelog) → Deploy to GCP → Smoke test.
+
+A `VERSION` file is generated at build/run time from `git describe --tags`. The startup banner reads it.
+
+## CI/CD Pipeline
+
+| Event | Workflow | Steps |
+|-------|----------|-------|
+| Every push/PR | CI | Tests → coverage check → Docker build + smoke |
+| Push `v*` tag | Release & Deploy | CI → `gh release create` → deploy.sh via SSH → smoke test |
+| Manual trigger | Deploy | deploy.sh via SSH → smoke test |
+
+Deploy script (`deploy.sh`): `git pull` → generate config from template + GitHub secrets/vars → `docker build` with version → `docker run`.
 
 ## Key Design Decisions
 
-- **No external API keys required.** All data comes from Polymarket's free Gamma API + CLOB. API-Football and Odds API were removed.
-- **Probability model uses score + clock + Polymarket prices.** No historical base rate database. Simple math: given the score and minutes remaining, what should the probability be? Compare to Polymarket price for edge.
-- **Tier mismatch = pre-match only.** Once a match starts, we can't verify clean conditions (no goals, no red cards) from Polymarket data alone, so live matches are standard rules (minute 80+).
-- **Team name matching uses market question text.** Polymarket lists markets in arbitrary order, so `_get_poly_implied` matches team names from the question string, not position.
-- **Neg-risk orderbook:** Polymarket uses neg-risk markets where YES+NO = $1. The `get_midpoint` API is the primary liquidity signal. Cross-book liquidity from complement tokens is checked as secondary.
-- **Partial fills accepted.** If at least 50% of desired shares or $500+ depth is available, the bot trades at reduced size. 10 retries at 1-second intervals before skipping.
-- **State persists across restarts** via `data/{mode}/state.json`. Only open positions + cumulative P&L persist. Evaluated events, scheduled bets, and caches reset each run.
-- **Paper and live data are completely separate.** Paper mode writes to `data/paper/`, live to `data/live/`. Paper data can be wiped without affecting live.
+- **No external API keys required.** All data from Polymarket's free Gamma API + CLOB.
+- **Probability model uses score + clock + Polymarket prices.** Simple math: goal rate per minute × time remaining → probability. Polymarket prices indicate team strength. No historical database.
+- **Tier mismatch = pre-match only.** Bet NO on weak underdogs (< 15%) when facing strong favorites (> 70%), 30 min before kickoff. Once match starts → standard minute 80+ rules.
+- **Team name matching from market question text.** `_get_poly_implied()` matches team names from the question string to handle arbitrary Polymarket market ordering.
+- **Liquidity: midpoint as primary signal.** Neg-risk orderbooks are misleading — `get_midpoint` confirms market is active. Partial fills accepted (50%+ or $500+ depth). 10 retries at 1s intervals.
+- **Paper = live minus one API call.** Identical P&L tracking, bankroll updates, result resolution. Only `place_order()` is skipped.
+- **Separate data directories.** `data/paper/`, `data/live/`, `data/ephemeral/`. Paper never touches live.
+- **State: only open positions + cumulative P&L persist.** Evaluated events, scheduled bets, caches reset each run.
+- **Config injected at runtime.** `config.yaml` is gitignored. Docker gets it via volume mount. CI/CD generates it from `config.example.yaml` + GitHub Secrets/Variables.
+
+## Config
+
+Secrets (GitHub Secrets — encrypted):
+- `DEPLOY_HOST`, `DEPLOY_USER`, `DEPLOY_SSH_KEY` — GCP VM access
+- `POLYMARKET_PRIVATE_KEY`, `POLYMARKET_FUNDER` — wallet (live mode only)
+
+Variables (GitHub Variables — plaintext):
+- `BOT_MODE` — paper/live/ephemeral
+- `BANKROLL` — starting bankroll
 
 ## How to Run
 
 ```bash
-./run.sh --paper        # paper trading, state persists
-./run.sh --live         # real money (prompts for confirmation)
-./run.sh --ephemeral    # throwaway run, wiped on start
+# Local
+./run.sh --paper
+./run.sh --live
+./run.sh --ephemeral
+
+# Docker
+docker run -v $(pwd)/config.yaml:/app/config.yaml -v $(pwd)/data:/app/data poly-bot --paper
+
+# Analyze
+uv run src/analyze.py
+uv run src/analyze.py --today
+uv run src/analyze.py --days
 ```
-
-## Dependencies
-
-All managed by `uv`. Key packages:
-- `polymarket-apis` — wraps Gamma API, CLOB, WebSocket, Web3
-- `requests`, `pyyaml`, `websockets`
-- `pytest`, `pytest-cov` — testing
 
 ## Common Tasks
 
-- **Add a league:** Add entry to `leagues:` in config.yaml with `polymarket_tag` and `api_football_id`. The global football scan (tag 100350) also catches unlisted leagues automatically.
-- **Tune strategy:** Edit `risk:` and `tier_mismatch:` sections in config.yaml. Key params: `min_edge_pct`, `kelly_fraction`, `max_single_stake`, `min_favorite_prob`.
-- **Analyze results:** `uv run analyze.py --paper` or `uv run analyze.py --live`
-- **Reset paper:** `uv run analyze.py --wipe-paper` or delete `data/paper/`
-- **Run tests:** `uv run pytest tests/ -v` — do this after every change.
+- **Release:** `git tag v1.3.0 && git push --tags`
+- **Manual deploy:** GitHub Actions → Deploy (manual) → Run workflow
+- **Add a league:** Add to `leagues:` in config with `polymarket_tag` and `name`
+- **Tune strategy:** Edit `risk:` and `tier_mismatch:` in config
+- **Check GCP bot:** `gcloud compute ssh poly-bot --zone=us-east1-b --command="sudo docker logs --tail 30 poly-bot"`
+- **Reset paper:** Delete `data/paper/` or `uv run src/analyze.py --wipe-paper`
