@@ -31,7 +31,11 @@ export GITHUB_TOKEN="${GITHUB_TOKEN:-}"
 export GITHUB_REPO="${GITHUB_REPO:-}"
 export PUSH_INTERVAL_SEC="${PUSH_INTERVAL_SEC:-300}"
 
-# Build and restart both containers
+# Stop and remove any old standalone containers (from pre-compose setup)
+sudo docker stop poly-bot poly-dash 2>/dev/null || true
+sudo docker rm poly-bot poly-dash 2>/dev/null || true
+
+# Build and restart both containers via compose
 sudo -E docker compose build
 sudo -E docker compose down
 sudo -E docker compose up -d
