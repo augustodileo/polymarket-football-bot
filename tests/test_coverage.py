@@ -638,3 +638,114 @@ class TestLiquidityPartialFill:
         # Only 100 shares but $500+ depth
         liq = LiquidityInfo(available_shares=100, total_depth=600, sufficient=True)
         assert liq.sufficient
+
+
+class TestMainGaps:
+    """Cover remaining main.py lines outside run_loop."""
+
+    def test_load_state_corrupt_file(self, tmp_path):
+        """Line 153-154: corrupt state file handled gracefully."""
+        M.STATE_FILE = tmp_path / "state.json"
+        M.STATE_FILE.write_text("{invalid json")
+        M._open_positions = {}
+        M._session_pnl = 0
+        from main import load_state
+        load_state()
+        assert M._open_positions == {}
+
+    def test_load_config_missing(self, tmp_path, monkeypatch):
+        """Line 161-166: missing config exits."""
+        import main as _m
+        old_root = _m._PROJECT_ROOT
+        _m._PROJECT_ROOT = tmp_path
+        try:
+            with pytest.raises(SystemExit):
+                _m.load_config()
+        finally:
+            _m._PROJECT_ROOT = old_root
+
+    def test_cross_book_fetch_fails(self):
+        """Line 325-326: cross-book exception handled."""
+        clob_ro = MagicMock()
+        mid = MagicMock(value=0.85)
+        clob_ro.get_midpoint.return_value = mid
+        book = MagicMock(asks=[], bids=[])
+        # First call returns book, second (complement) raises
+        clob_ro.get_order_book.side_effect = [book, Exception("network")]
+        liq = check_liquidity(clob_ro, "tok", "NO", 100, 0.85, complement_token_id="comp")
+        assert liq.sufficient  # midpoint fallback
+
+    def test_midpoint_fallback_returns_liquidity(self):
+        """Line 365: midpoint fallback when books empty but midpoint exists."""
+        clob_ro = MagicMock()
+        mid = MagicMock(value=0.85)
+        clob_ro.get_midpoint.return_value = mid
+        book = MagicMock(asks=[], bids=[])
+        clob_ro.get_order_book.return_value = book
+        liq = check_liquidity(clob_ro, "tok", "NO", 500, 0.82)
+        assert liq.sufficient
+        assert liq.best_price == 0.85
+
+    def test_resolve_with_auto_redeem_win(self, tmp_path):
+        """Line 616-617: auto-redeem path on win."""
+        M.TRADES_DIR = tmp_path
+        M.STATE_FILE = tmp_path / "state.json"
+        M._session_pnl = 0
+        M._session_wins = 0
+        M._session_losses = 0
+        M._open_positions = {
+            77: {
+                "event_title": "Test", "opened_at": "2026-01-01T00:00:00Z",
+                "minute": 85, "score_at_entry": "2-0",
+                "home_team": "home", "away_team": "away",
+                "market_question": "Will home win?", "side": "YES",
+                "token_id": "t", "condition_id": "0xcond", "neg_risk": True,
+                "poly_price": 0.90, "true_prob": 0.95, "book_implied": 0.0,
+                "edge_pct": 5.0, "stake": 900, "shares": 1000,
+                "profit_if_win": 100, "loss_if_lose": 900,
+                "expected_value": 50.0, "league": "EPL",
+                "trade_type": "STANDARD", "liquidity_depth": 5000,
+                "liquidity_spread": 0.02,
+            }
+        }
+        ev = MagicMock(id=77, ended=True, score="2-0", period="FT", live=False, markets=[])
+        from main import resolve_ended_matches
+        resolve_ended_matches([(ev, "epl", {})], MagicMock(), "paper", True)
+        assert M._session_wins == 1
+
+    def test_pre_match_scheduling_string_start_time(self):
+        """Line 932-939: start_time as ISO string."""
+        M._evaluated_event_ids = set()
+        M._open_positions = {}
+        M._pre_match_scheduled = {}
+
+        now = datetime.now(timezone.utc)
+        from datetime import timedelta
+        kickoff = now + timedelta(minutes=45)
+        if kickoff.date() != now.date():
+            kickoff = now + timedelta(minutes=5)
+
+        m_home = _make_market_mock("Will Strong win?", prices=[0.78, 0.22])
+        m_draw = _make_market_mock("Will draw?", prices=[0.12, 0.88])
+        m_away = _make_market_mock("Will Weak win?", prices=[0.10, 0.90])
+
+        ev = MagicMock()
+        ev.id = 777
+        ev.title = "Strong vs. Weak"
+        ev.live = False
+        ev.ended = False
+        ev.start_time = kickoff.isoformat()  # string, not datetime
+        ev.markets = [m_home, m_draw, m_away]
+
+        events = [(ev, "test", {"name": "Test"})]
+        _scan_pre_match_mismatches(events, {},
+                                   {"enabled": True, "min_favorite_prob": 0.70,
+                                    "max_underdog_prob": 0.15, "pre_match": True,
+                                    "pre_match_bet_minutes_before": 30,
+                                    "pre_match_min_edge_pct": 0},
+                                   {"max_concurrent_positions": 5, "kelly_fraction": 0.25,
+                                    "max_single_stake": 1000},
+                                   10000, None, MagicMock(), "paper")
+
+        assert 777 in M._pre_match_scheduled
+        M._pre_match_scheduled = {}

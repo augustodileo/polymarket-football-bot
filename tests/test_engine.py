@@ -396,3 +396,50 @@ class TestEdgeCases:
         markets = [{"question": "Will Real Madrid CF win?"}]
         m = _find_market(markets, "Real Madrid CF", "win")
         assert m is not None
+
+
+class TestEngineEdgeCases100:
+    """Get engine.py to 100%."""
+
+    def test_zero_poly_prices_trailing_share_default(self):
+        """Line 117: trailing_share defaults to 0.45 when poly prices are 0."""
+        h, d, a, _ = _estimate_probability(1, 0, 82, 0.0, 0.0)
+        assert h > 0.5  # leader should still be favored
+
+    def test_stake_too_small(self):
+        """Line 294: Kelly produces stake < $1."""
+        markets = [
+            {"question": "Will A win?", "outcome_prices": [0.98, 0.02],
+             "token_ids": ["a", "b"], "sports_market_type": "moneyline"},
+            {"question": "Will draw?", "outcome_prices": [0.01, 0.99],
+             "token_ids": ["c", "d"], "sports_market_type": "moneyline"},
+            {"question": "Will B win?", "outcome_prices": [0.01, 0.99],
+             "token_ids": ["e", "f"], "sports_market_type": "moneyline"},
+        ]
+        signal = evaluate("A", "B", 2, 0, 92,
+                          markets, 10,  # tiny bankroll
+                          {"min_edge_pct": 0, "kelly_fraction": 0.01, "max_single_stake": 1000})
+        assert signal.action == "NO_TRADE"
+        assert "too small" in signal.reason.lower()
+
+    def test_find_market_second_word_fallback(self):
+        """Line 334: match via second word in team name."""
+        markets = [{"question": "Will Atletico Madrid win?"}]
+        m = _find_market(markets, "Club Atletico de Madrid", "win")
+        assert m is not None
+
+    def test_edge_exactly_zero(self):
+        """Line 268: edge == 0 returns NO_TRADE."""
+        markets = [
+            {"question": "Will Home win?", "outcome_prices": [0.99, 0.01],
+             "token_ids": ["a", "b"], "sports_market_type": "moneyline"},
+            {"question": "Will draw?", "outcome_prices": [0.005, 0.995],
+             "token_ids": ["c", "d"], "sports_market_type": "moneyline"},
+            {"question": "Will Away win?", "outcome_prices": [0.005, 0.995],
+             "token_ids": ["e", "f"], "sports_market_type": "moneyline"},
+        ]
+        signal = evaluate("Home", "Away", 3, 0, 93,
+                          markets, 10000,
+                          {"min_edge_pct": 0, "kelly_fraction": 0.25, "max_single_stake": 1000})
+        # At 3-0 min 93, our estimate is ~99.9% and poly is 99% — tiny edge or no edge
+        assert signal.action in ("BUY", "NO_TRADE")

@@ -317,3 +317,62 @@ class TestMainFunction:
             assert "No trades" in out
         finally:
             analyze.DATA_DIR = orig
+
+
+class TestMainAll:
+    """Test --all flag with both paper and live data."""
+
+    def test_all_with_both(self, tmp_path, capsys, monkeypatch):
+        for mode in ['paper', 'live']:
+            d = tmp_path / mode
+            d.mkdir()
+            (d / 'trades_2026-03-22.jsonl').write_text(
+                json.dumps({"outcome": "WIN", "pnl": 50, "stake": 200, "edge_pct": 3.0,
+                             "timestamp": "2026-03-22T20:00:00Z", "event": "X", "side": "NO"}) + "\n")
+        import analyze
+        orig = analyze.DATA_DIR
+        analyze.DATA_DIR = tmp_path
+        monkeypatch.setattr("sys.argv", ["analyze.py", "--all"])
+        try:
+            from analyze import main
+            main()
+            out = capsys.readouterr().out
+            assert "PAPER" in out
+            assert "LIVE" in out
+            assert "COMBINED" in out
+        finally:
+            analyze.DATA_DIR = orig
+
+    def test_wipe_confirmed(self, tmp_path, monkeypatch, capsys):
+        paper_dir = tmp_path / "paper"
+        paper_dir.mkdir()
+        (paper_dir / "trades.jsonl").write_text("{}\n")
+        import analyze
+        orig = analyze.DATA_DIR
+        analyze.DATA_DIR = tmp_path
+        monkeypatch.setattr("sys.argv", ["analyze.py", "--wipe-paper"])
+        monkeypatch.setattr("builtins.input", lambda _: "yes")
+        try:
+            from analyze import main
+            main()
+            assert len(list(paper_dir.iterdir())) == 0
+        finally:
+            analyze.DATA_DIR = orig
+
+    def test_wipe_cancelled(self, tmp_path, monkeypatch, capsys):
+        paper_dir = tmp_path / "paper"
+        paper_dir.mkdir()
+        (paper_dir / "trades.jsonl").write_text("{}\n")
+        import analyze
+        orig = analyze.DATA_DIR
+        analyze.DATA_DIR = tmp_path
+        monkeypatch.setattr("sys.argv", ["analyze.py", "--wipe-paper"])
+        monkeypatch.setattr("builtins.input", lambda _: "no")
+        try:
+            from analyze import main
+            main()
+            out = capsys.readouterr().out
+            assert "Cancelled" in out
+            assert len(list(paper_dir.iterdir())) == 1  # file still there
+        finally:
+            analyze.DATA_DIR = orig
