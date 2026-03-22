@@ -1042,24 +1042,28 @@ def run_loop(config: dict, mode: str):
     bankroll = _get_bankroll(config, mode, web3_client)
 
     tag = mode.upper()
-    W = 56  # inner width between the # borders
+    P = "   "  # left padding inside border
     ver_line = f"Polymarket Football Trading Bot  {__version__}"
     mode_line = f"Mode: {tag}"
+    # Each content line is exactly 56 chars, padded with spaces to fill
+    def L(s): return f"#{P}{s:<53s}#"
+    E = "#" + " " * 56 + "#"
+    B = "#" * 58
     banner = "\n".join([
         "",
-        "#" * (W + 2),
-        f"#{'':{W}s}#",
-        f"#{'____       _        ____        _':^{W}s}#",
-        f"#{'|  _ \\ ___ | |_   _ | __ )  ___ | |_':^{W}s}#",
-        f"#{'| |_) / _ \\| | | | ||  _ \\ / _ \\| __|':^{W}s}#",
-        f"#{'|  __/ (_) | | |_| || |_) | (_) | |_':^{W}s}#",
-        f"#{'|_|   \\___/|_|\\__, ||____/ \\___/ \\__|':^{W}s}#",
-        f"#{'|___/':^{W}s}#",
-        f"#{'':{W}s}#",
-        f"#{'   ' + ver_line:{W}s}#",
-        f"#{'   ' + mode_line:{W}s}#",
-        f"#{'':{W}s}#",
-        "#" * (W + 2),
+        B,
+        E,
+        L(r"____       _        ____        _"),
+        L(r"|  _ \ ___ | |_   _ | __ )  ___ | |_"),
+        L(r"| |_) / _ \| | | | ||  _ \ / _ \| __|"),
+        L(r"|  __/ (_) | | |_| || |_) | (_) | |_"),
+        L(r"|_|   \___/|_|\__, ||____/ \___/ \__|"),
+        L(r"              |___/"),
+        E,
+        L(ver_line),
+        L(mode_line),
+        E,
+        B,
         "",
     ])
     sys.stdout.write(banner + "\n")
