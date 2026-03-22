@@ -26,9 +26,26 @@ jobs:
           host: ${{ secrets.DEPLOY_HOST }}
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
+          envs: BOT_MODE,BANKROLL,POLYMARKET_PRIVATE_KEY,POLYMARKET_FUNDER
           script: |
             cd ~/poly-bot
             git pull origin main
+
+            # Generate config.yaml from config.example.yaml + secrets
+            cp config.example.yaml config.yaml
+
+            # Inject secrets if set (sed replaces the placeholder values)
+            if [ -n "$POLYMARKET_PRIVATE_KEY" ]; then
+              sed -i 's|# polymarket_private_key: ""|polymarket_private_key: "'"$POLYMARKET_PRIVATE_KEY"'"|' config.yaml
+            fi
+            if [ -n "$POLYMARKET_FUNDER" ]; then
+              sed -i 's|# polymarket_funder: ""|polymarket_funder: "'"$POLYMARKET_FUNDER"'"|' config.yaml
+            fi
+            if [ -n "$BANKROLL" ]; then
+              sed -i 's|bankroll: 10000|bankroll: '"$BANKROLL"'|' config.yaml
+            fi
+
+            # Build and restart
             sudo docker build -t poly-bot .
             sudo docker stop poly-bot 2>/dev/null || true
             sudo docker rm poly-bot 2>/dev/null || true
@@ -36,6 +53,11 @@ jobs:
               -v $(pwd)/config.yaml:/app/config.yaml \
               -v $(pwd)/data:/app/data \
               --name poly-bot \
-              poly-bot --paper
+              poly-bot --${BOT_MODE:-paper}
             sleep 5
             sudo docker logs --tail 5 poly-bot
+        env:
+          BOT_MODE: ${{ secrets.BOT_MODE }}
+          BANKROLL: ${{ secrets.BANKROLL }}
+          POLYMARKET_PRIVATE_KEY: ${{ secrets.POLYMARKET_PRIVATE_KEY }}
+          POLYMARKET_FUNDER: ${{ secrets.POLYMARKET_FUNDER }}
