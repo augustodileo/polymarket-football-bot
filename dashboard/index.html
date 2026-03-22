@@ -5,32 +5,75 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PolyBot Dashboard</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0d1117; color: #c9d1d9; }
-        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
-        h1 { color: #58a6ff; margin-bottom: 5px; }
-        .subtitle { color: #8b949e; margin-bottom: 20px; font-size: 14px; }
-        .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 25px; }
-        .card { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 16px; }
-        .card .label { color: #8b949e; font-size: 12px; text-transform: uppercase; }
-        .card .value { font-size: 28px; font-weight: bold; margin-top: 4px; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #0d1117; color: #c9d1d9;
+            -webkit-text-size-adjust: 100%;
+        }
+        .container { max-width: 1200px; margin: 0 auto; padding: 16px; }
+        h1 { color: #58a6ff; margin-bottom: 5px; font-size: clamp(20px, 5vw, 32px); }
+        .subtitle { color: #8b949e; margin-bottom: 16px; font-size: 13px; }
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .card {
+            background: #161b22; border: 1px solid #30363d;
+            border-radius: 8px; padding: 12px;
+            min-width: 0;
+        }
+        .card .label { color: #8b949e; font-size: 10px; text-transform: uppercase; white-space: nowrap; }
+        .card .value { font-size: clamp(18px, 4vw, 28px); font-weight: bold; margin-top: 2px; overflow: hidden; text-overflow: ellipsis; }
         .card .value.green { color: #3fb950; }
         .card .value.red { color: #f85149; }
         .card .value.blue { color: #58a6ff; }
-        .chart-container { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 20px; margin-bottom: 25px; }
-        .chart-container h2 { color: #c9d1d9; font-size: 16px; margin-bottom: 15px; }
-        table { width: 100%; border-collapse: collapse; font-size: 13px; }
-        th { text-align: left; padding: 10px 8px; color: #8b949e; border-bottom: 1px solid #30363d; font-weight: 500; }
-        td { padding: 8px; border-bottom: 1px solid #21262d; }
+        .chart-container {
+            background: #161b22; border: 1px solid #30363d;
+            border-radius: 8px; padding: 12px; margin-bottom: 20px;
+            overflow-x: auto;
+        }
+        .chart-container h2 { color: #c9d1d9; font-size: 15px; margin-bottom: 10px; }
+        .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        table { width: 100%; border-collapse: collapse; font-size: 12px; white-space: nowrap; }
+        th { text-align: left; padding: 8px 6px; color: #8b949e; border-bottom: 1px solid #30363d; font-weight: 500; position: sticky; top: 0; background: #161b22; }
+        td { padding: 6px; border-bottom: 1px solid #21262d; max-width: 200px; overflow: hidden; text-overflow: ellipsis; }
         .win { color: #3fb950; }
         .loss { color: #f85149; }
-        .open-positions { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 20px; margin-bottom: 25px; }
-        .open-positions h2 { color: #c9d1d9; font-size: 16px; margin-bottom: 15px; }
+        .open-positions {
+            background: #161b22; border: 1px solid #30363d;
+            border-radius: 8px; padding: 12px; margin-bottom: 20px;
+        }
+        .open-positions h2 { color: #c9d1d9; font-size: 15px; margin-bottom: 10px; }
         .no-data { text-align: center; color: #8b949e; padding: 40px; }
-        .filters { margin-bottom: 15px; display: flex; gap: 10px; align-items: center; }
-        .filters select, .filters input { background: #0d1117; border: 1px solid #30363d; color: #c9d1d9; padding: 6px 10px; border-radius: 6px; font-size: 13px; }
-        .updated { color: #8b949e; font-size: 12px; text-align: right; margin-bottom: 10px; }
+        .filters {
+            margin-bottom: 12px; display: flex; gap: 8px;
+            align-items: center; flex-wrap: wrap;
+        }
+        .filters select, .filters input {
+            background: #0d1117; border: 1px solid #30363d;
+            color: #c9d1d9; padding: 8px 10px; border-radius: 6px;
+            font-size: 14px; min-width: 0; flex: 1;
+            -webkit-appearance: none;
+        }
+        .updated { color: #8b949e; font-size: 11px; text-align: right; margin-bottom: 8px; }
+
+        @media (max-width: 480px) {
+            .container { padding: 10px; }
+            .cards { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+            .card { padding: 10px; }
+            .card .label { font-size: 9px; }
+            .card .value { font-size: 20px; }
+            table { font-size: 11px; }
+            td, th { padding: 5px 4px; }
+            td { max-width: 120px; }
+            .chart-container { padding: 10px; }
+        }
     </style>
 </head>
 <body>
@@ -55,18 +98,22 @@
 
         <div class="open-positions" id="openSection" style="display:none">
             <h2>Open Positions</h2>
-            <table id="openTable">
-                <thead><tr><th>Match</th><th>Bet</th><th>Entry</th><th>Stake</th><th>Edge</th><th>Win/Lose</th></tr></thead>
-                <tbody></tbody>
-            </table>
+            <div class="table-wrap">
+                <table id="openTable">
+                    <thead><tr><th>Match</th><th>Bet</th><th>Entry</th><th>Stake</th><th>Edge</th><th>Win/Lose</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
         </div>
 
         <div class="open-positions" id="schedSection" style="display:none">
             <h2>Scheduled Pre-Match Bets</h2>
-            <table id="schedTable">
-                <thead><tr><th>Match</th><th>Favorite</th><th>Underdog (betting NO)</th><th>Fav %</th><th>Kickoff</th><th>Bet At</th></tr></thead>
-                <tbody></tbody>
-            </table>
+            <div class="table-wrap">
+                <table id="schedTable">
+                    <thead><tr><th>Match</th><th>Favorite</th><th>Underdog (NO)</th><th>Fav %</th><th>Kickoff</th><th>Bet At</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
         </div>
 
         <div class="chart-container">
@@ -81,10 +128,12 @@
                 <select id="filterOutcome"><option value="">All</option><option value="WIN">Wins</option><option value="LOSS">Losses</option></select>
                 <input type="date" id="filterDate" />
             </div>
-            <table id="tradesTable">
-                <thead><tr><th>Date</th><th>Match</th><th>League</th><th>Bet</th><th>Score</th><th>Edge</th><th>Stake</th><th>Result</th><th>PnL</th></tr></thead>
-                <tbody></tbody>
-            </table>
+            <div class="table-wrap">
+                <table id="tradesTable">
+                    <thead><tr><th>Date</th><th>Match</th><th>League</th><th>Bet</th><th>Score</th><th>Edge</th><th>Stake</th><th>Result</th><th>PnL</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
         </div>
     </div>
 
