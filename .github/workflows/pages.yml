@@ -23,18 +23,20 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          # Save dashboard files before switching branches
+          # Save new HTML
           cp dashboard/index.html /tmp/index.html
 
-          # Create orphan gh-pages branch
-          git fetch origin gh-pages 2>/dev/null || true
-          git checkout --orphan gh-pages-tmp
-          git rm -rf . 2>/dev/null || true
+          # Checkout existing gh-pages (preserves dashboard-data.json)
+          git fetch origin gh-pages
+          git checkout gh-pages
 
-          # Add dashboard files
-          mv /tmp/index.html index.html
-          echo '{"summary":{"total_trades":0,"wins":0,"losses":0,"win_rate":0,"total_pnl":0,"total_staked":0,"roi":0},"open_positions":[],"pnl_curve":[],"by_league":{},"by_day":{}}' > dashboard-data.json
+          # Update only the HTML
+          cp /tmp/index.html index.html
+
+          # Create placeholder data only if no data file exists yet
+          if [ ! -f dashboard-data.json ]; then
+            echo '{"summary":{"total_trades":0,"wins":0,"losses":0,"win_rate":0,"total_pnl":0,"total_staked":0,"roi":0},"open_positions":[],"scheduled_bets":[],"pnl_curve":[],"by_league":{},"by_day":{}}' > dashboard-data.json
+          fi
 
           git add index.html dashboard-data.json
-          git commit -m "Deploy dashboard"
-          git push origin HEAD:gh-pages --force
+          git diff --cached --quiet && echo "No changes" || (git commit -m "Update dashboard HTML" && git push origin gh-pages)
