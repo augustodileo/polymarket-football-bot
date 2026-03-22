@@ -1,9 +1,7 @@
-name: Deploy
+name: Deploy (manual)
 
 on:
-  release:
-    types: [published]
-  workflow_dispatch:  # manual trigger
+  workflow_dispatch:  # manual trigger only — for hotfixes
 
 jobs:
   deploy:
@@ -21,11 +19,9 @@ jobs:
             git fetch --tags
             git pull origin main
 
-            # Get version from latest git tag
             VERSION=$(git describe --tags --always 2>/dev/null || echo "dev")
             echo "Deploying version: $VERSION"
 
-            # Generate config from template + inject values
             cp config.example.yaml config.yaml
             if [ -n "$BANKROLL" ]; then
               sed -i 's|bankroll: 10000|bankroll: '"$BANKROLL"'|' config.yaml
@@ -37,10 +33,7 @@ jobs:
               sed -i 's|# polymarket_funder: ""|polymarket_funder: "'"$POLYMARKET_FUNDER"'"|' config.yaml
             fi
 
-            # Build with version injected
             sudo docker build --build-arg VERSION=$VERSION -t poly-bot:$VERSION -t poly-bot:latest .
-
-            # Restart
             sudo docker stop poly-bot 2>/dev/null || true
             sudo docker rm poly-bot 2>/dev/null || true
             sudo docker run -d --restart=always \
