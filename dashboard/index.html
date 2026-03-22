@@ -166,6 +166,8 @@
         const DATA_URL = 'dashboard-data.json';
         let allData = null;
         let pnlMode = '$';  // '$' or '%'
+        let pnlChart = null;
+        let leagueChart = null;
 
         function togglePnlMode() {
             pnlMode = pnlMode === '$' ? '%' : '$';
@@ -213,8 +215,11 @@
             const tickFont = { size: isMobile ? 10 : 12 };
             const pointSize = isMobile ? 3 : 5;
 
+            // Destroy old charts if re-rendering
+            if (pnlChart) { pnlChart.destroy(); pnlChart = null; }
+            if (leagueChart) { leagueChart.destroy(); leagueChart = null; }
+
             // PnL Chart — continuous time axis like Grafana
-            let pnlChart = null;
 
             function buildPnlTimeSeries(rangeMs) {
                 // Build step-function data: PnL stays flat between trades
@@ -345,7 +350,7 @@
             // League Chart
             const leagues = Object.entries(allData.by_league).sort((a, b) => b[1].pnl - a[1].pnl);
             const lctx = document.getElementById('leagueChart').getContext('2d');
-            new Chart(lctx, {
+            leagueChart = new Chart(lctx, {
                 type: 'bar',
                 data: {
                     labels: leagues.map(l => l[0]),
