@@ -2,6 +2,10 @@ FROM python:3.12-slim
 
 WORKDIR /app
 
+# Version injected from git tag at build time
+ARG VERSION=dev
+RUN echo "${VERSION}" > VERSION
+
 # Install uv
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
@@ -18,8 +22,6 @@ COPY main.py engine.py stats.py analyze.py ./
 RUN mkdir -p /app/data
 VOLUME ["/app/data"]
 
-# config.yaml must be provided at runtime via volume mount:
-#   docker run -v /path/to/config.yaml:/app/config.yaml poly-bot --paper
-
+# config.yaml must be provided at runtime via volume mount
 ENTRYPOINT ["uv", "run", "python", "main.py"]
 CMD ["--paper"]

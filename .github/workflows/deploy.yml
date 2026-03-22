@@ -10,10 +10,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # need full history for git describe
       - uses: astral-sh/setup-uv@v4
       - run: uv python install 3.12
       - run: uv sync
       - run: cp config.example.yaml config.yaml
+      - run: |
+          VERSION=$(git describe --tags --always 2>/dev/null || echo "dev")
+          echo "${VERSION}" > VERSION
       - run: uv run pytest tests/ -v
 
   deploy:
@@ -29,17 +34,18 @@ jobs:
           envs: BOT_MODE,BANKROLL,POLYMARKET_PRIVATE_KEY,POLYMARKET_FUNDER
           script: |
             cd ~/poly-bot
+            git fetch --tags
             git pull origin main
+
+            # Get version from latest git tag
+            VERSION=$(git describe --tags --always 2>/dev/null || echo "dev")
+            echo "Deploying version: $VERSION"
 
             # Generate config from template + inject values
             cp config.example.yaml config.yaml
-
-            # Non-sensitive config (from GitHub Variables)
             if [ -n "$BANKROLL" ]; then
               sed -i 's|bankroll: 10000|bankroll: '"$BANKROLL"'|' config.yaml
             fi
-
-            # Secrets (from GitHub Secrets — only for live mode)
             if [ -n "$POLYMARKET_PRIVATE_KEY" ]; then
               sed -i 's|# polymarket_private_key: ""|polymarket_private_key: "'"$POLYMARKET_PRIVATE_KEY"'"|' config.yaml
             fi
@@ -47,21 +53,21 @@ jobs:
               sed -i 's|# polymarket_funder: ""|polymarket_funder: "'"$POLYMARKET_FUNDER"'"|' config.yaml
             fi
 
-            # Build and restart
-            sudo docker build -t poly-bot .
+            # Build with version injected
+            sudo docker build --build-arg VERSION=$VERSION -t poly-bot:$VERSION -t poly-bot:latest .
+
+            # Restart
             sudo docker stop poly-bot 2>/dev/null || true
             sudo docker rm poly-bot 2>/dev/null || true
             sudo docker run -d --restart=always \
               -v $(pwd)/config.yaml:/app/config.yaml \
               -v $(pwd)/data:/app/data \
               --name poly-bot \
-              poly-bot --${BOT_MODE:-paper}
+              poly-bot:$VERSION --${BOT_MODE:-paper}
             sleep 5
-            sudo docker logs --tail 5 poly-bot
+            sudo docker logs --tail 10 poly-bot
         env:
-          # Variables (non-sensitive, visible in logs)
           BOT_MODE: ${{ vars.BOT_MODE }}
           BANKROLL: ${{ vars.BANKROLL }}
-          # Secrets (encrypted, masked in logs)
           POLYMARKET_PRIVATE_KEY: ${{ secrets.POLYMARKET_PRIVATE_KEY }}
           POLYMARKET_FUNDER: ${{ secrets.POLYMARKET_FUNDER }}

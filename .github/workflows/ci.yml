@@ -11,6 +11,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Install uv
         uses: astral-sh/setup-uv@v4
@@ -21,8 +23,10 @@ jobs:
       - name: Install dependencies
         run: uv sync
 
-      - name: Create config for tests
-        run: cp config.example.yaml config.yaml
+      - name: Create config + version for tests
+        run: |
+          cp config.example.yaml config.yaml
+          git describe --tags --always 2>/dev/null > VERSION || echo "dev" > VERSION
 
       - name: Run tests
         run: uv run pytest tests/ -v --cov=. --cov-report=term-missing
@@ -41,15 +45,19 @@ jobs:
     needs: test
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get version
+        run: echo "VERSION=$(git describe --tags --always 2>/dev/null || echo dev)" >> $GITHUB_ENV
 
       - name: Build Docker image
-        run: docker build -t poly-bot .
+        run: docker build --build-arg VERSION=${{ env.VERSION }} -t poly-bot:${{ env.VERSION }} .
 
       - name: Test Docker image starts
         run: |
-          # Create minimal config for smoke test
           cp config.example.yaml config.yaml
-          docker run --rm -v $(pwd)/config.yaml:/app/config.yaml poly-bot --ephemeral &
+          docker run --rm -v $(pwd)/config.yaml:/app/config.yaml poly-bot:${{ env.VERSION }} --ephemeral &
           DOCKER_PID=$!
           sleep 15
           kill $DOCKER_PID 2>/dev/null || true

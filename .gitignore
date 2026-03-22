@@ -7,3 +7,4 @@ config.yaml
 .pytest_cache/
 .coverage
 *.egg-info/
+VERSION

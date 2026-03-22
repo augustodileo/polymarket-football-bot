@@ -16,17 +16,15 @@ Usage:
 import argparse
 import json
 from dataclasses import dataclass
-from importlib.metadata import version as pkg_version
 import logging
 import sys
 import time
 from datetime import date, datetime, timezone
 from pathlib import Path
 
-try:
-    __version__ = pkg_version("polymarket-football-bot")
-except Exception:
-    __version__ = "1.0.0"
+# Version injected at build time from git tag. See VERSION file.
+_VERSION_FILE = Path(__file__).parent / "VERSION"
+__version__ = _VERSION_FILE.read_text().strip() if _VERSION_FILE.exists() else "dev"
 
 import yaml
 from polymarket_apis import PolymarketGammaClient, PolymarketClobClient, PolymarketReadOnlyClobClient
