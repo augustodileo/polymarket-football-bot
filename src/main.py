@@ -1042,22 +1042,27 @@ def run_loop(config: dict, mode: str):
     bankroll = _get_bankroll(config, mode, web3_client)
 
     tag = mode.upper()
-    banner = f"""
-##########################################################
-#                                                        #
-#   ____       _        ____        _                    #
-#  |  _ \\ ___ | |_   _ | __ )  ___ | |_                 #
-#  | |_) / _ \\| | | | ||  _ \\ / _ \\| __|                #
-#  |  __/ (_) | | |_| || |_) | (_) | |_                 #
-#  |_|   \\___/|_|\\__, ||____/ \\___/ \\__|                #
-#                |___/                                   #
-#                                                        #
-#   Polymarket Football Trading Bot  {__version__:<19s}#
-#   Mode: {tag:<44s}#
-#                                                        #
-##########################################################
-"""
-    sys.stdout.write(banner)
+    W = 56  # inner width between the # borders
+    ver_line = f"Polymarket Football Trading Bot  {__version__}"
+    mode_line = f"Mode: {tag}"
+    banner = "\n".join([
+        "",
+        "#" * (W + 2),
+        f"#{'':{W}s}#",
+        f"#{'____       _        ____        _':^{W}s}#",
+        f"#{'|  _ \\ ___ | |_   _ | __ )  ___ | |_':^{W}s}#",
+        f"#{'| |_) / _ \\| | | | ||  _ \\ / _ \\| __|':^{W}s}#",
+        f"#{'|  __/ (_) | | |_| || |_) | (_) | |_':^{W}s}#",
+        f"#{'|_|   \\___/|_|\\__, ||____/ \\___/ \\__|':^{W}s}#",
+        f"#{'|___/':^{W}s}#",
+        f"#{'':{W}s}#",
+        f"#{'   ' + ver_line:{W}s}#",
+        f"#{'   ' + mode_line:{W}s}#",
+        f"#{'':{W}s}#",
+        "#" * (W + 2),
+        "",
+    ])
+    sys.stdout.write(banner + "\n")
     sys.stdout.flush()
     log.info(f"Bankroll: ${bankroll:,.2f}")
     log.info(f"Monitoring {len(leagues)} leagues | Trade from minute {min_minute}+")

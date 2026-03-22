@@ -5,6 +5,9 @@ on:
     tags:
       - 'v*'
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   test:
     uses: ./.github/workflows/ci.yml
@@ -61,3 +64,8 @@ jobs:
           POLYMARKET_PRIVATE_KEY: ${{ secrets.POLYMARKET_PRIVATE_KEY }}
           POLYMARKET_FUNDER: ${{ secrets.POLYMARKET_FUNDER }}
           DEPLOY_SCRIPT: ${{ env.DEPLOY_SCRIPT }}
+
+  verify:
+    needs: deploy
+    uses: ./.github/workflows/smoke-test.yml
+    secrets: inherit

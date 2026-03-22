@@ -3,7 +3,10 @@ name: CI
 on:
   push:
   pull_request:
-  workflow_call:  # reusable by other workflows
+  workflow_call:
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   test:
