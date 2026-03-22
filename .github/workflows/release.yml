@@ -44,16 +44,20 @@ jobs:
     needs: [test, release]
     steps:
       - uses: actions/checkout@v4
+      - name: Read deploy script
+        run: echo "DEPLOY_SCRIPT=$(cat .github/deploy.sh | base64 -w0)" >> $GITHUB_ENV
       - name: Deploy to GCP VM
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.DEPLOY_HOST }}
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
-          envs: BOT_MODE,BANKROLL,POLYMARKET_PRIVATE_KEY,POLYMARKET_FUNDER
-          script_file: .github/deploy.sh
+          envs: BOT_MODE,BANKROLL,POLYMARKET_PRIVATE_KEY,POLYMARKET_FUNDER,DEPLOY_SCRIPT
+          script: |
+            echo "$DEPLOY_SCRIPT" | base64 -d | bash
         env:
           BOT_MODE: ${{ vars.BOT_MODE }}
           BANKROLL: ${{ vars.BANKROLL }}
           POLYMARKET_PRIVATE_KEY: ${{ secrets.POLYMARKET_PRIVATE_KEY }}
           POLYMARKET_FUNDER: ${{ secrets.POLYMARKET_FUNDER }}
+          DEPLOY_SCRIPT: ${{ env.DEPLOY_SCRIPT }}
