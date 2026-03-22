@@ -1285,16 +1285,14 @@ def run_loop(config: dict, mode: str):
                 log.info(line)
 
             # Print open positions with current match state + live valuation
+            total_cost = 0.0
+            total_value = 0.0
             if _open_positions:
-                print("-" * 60)
-                total_cost = 0.0
-                total_value = 0.0
-                print(f"  OPEN BETS ({len(_open_positions)}):")
+                log.info(f"  OPEN BETS ({len(_open_positions)}):")
                 for eid, pos in _open_positions.items():
-                    # Find current score and live price for this event
                     current_score = pos["score_at_entry"]
                     current_min = pos["minute"]
-                    current_price = pos["poly_price"]  # fallback to entry price
+                    current_price = pos["poly_price"]
                     for ev, _lk, _lc in events:
                         if ev.id == eid:
                             current_score = str(ev.score or current_score)
@@ -1303,13 +1301,11 @@ def run_loop(config: dict, mode: str):
                                     current_min = int(ev.elapsed)
                                 except (ValueError, TypeError):
                                     pass
-                            # Get current price from live market data
                             for m in (ev.markets or []):
                                 if m.sports_market_type != "moneyline":
                                     continue
                                 mq = (m.question or "").lower()
                                 pq = (pos["market_question"] or "").lower()
-                                # Match by checking if key words overlap
                                 if any(w in mq for w in pq.split() if len(w) >= 4):
                                     p = m.outcome_prices
                                     if isinstance(p, str):
@@ -1327,42 +1323,29 @@ def run_loop(config: dict, mode: str):
                     unrealized = value - cost
                     total_cost += cost
                     total_value += value
-
-                    # Color indicator
                     pnl_indicator = "+" if unrealized >= 0 else ""
 
-                    print(f"    {pos['event_title']}")
-                    print(f"      Now: {current_score} min {current_min} | {pos['side']} on \"{pos['market_question']}\"")
-                    print(f"      Entry: {pos['shares']} shares @ {pos['poly_price']:.3f} = ${cost:.0f} | Now @ {current_price:.3f} = ${value:.0f} | P&L: {pnl_indicator}${unrealized:.0f}")
+                    log.info(f"    {pos['event_title']} | {current_score} min {current_min} | "
+                             f"{pos['side']} | ${cost:.0f}→${value:.0f} ({pnl_indicator}${unrealized:.0f})")
 
-                total_unrealized = total_value - total_cost
-                pnl_ind = "+" if total_unrealized >= 0 else ""
-                print(f"  TOTAL: Cost ${total_cost:.0f} | Value ${total_value:.0f} | Unrealized {pnl_ind}${total_unrealized:.0f}")
-                print("-" * 60)
+            # Portfolio summary — only show when there are open positions or trades
+            if _open_positions or _session_trades > 0:
+                open_stakes = sum(p["stake"] for p in _open_positions.values())
+                total_unrealized = (total_value - total_cost) if _open_positions else 0
+                total_pnl = _session_pnl + total_unrealized
 
-            # Portfolio summary — realized P&L from our trades, unrealized from live Polymarket prices
-            open_stakes = sum(p["stake"] for p in _open_positions.values())
-            total_unrealized = (total_value - total_cost) if _open_positions else 0
-            total_pnl = _session_pnl + total_unrealized
+                wallet_str = ""
+                if mode == "live" and web3_client is not None:
+                    try:
+                        wb = web3_client.get_usdc_balance() / 1_000_000
+                        wallet_str = f" | Wallet: ${wb:,.2f}"
+                    except Exception as e:  # wallet balance fetch can fail
+                        pass
 
-            # In live mode, try to get real wallet balance for accurate "Available"
-            wallet_balance = None
-            if mode == "live" and web3_client is not None:
-                try:
-                    wallet_balance = web3_client.get_usdc_balance() / 1_000_000
-                except Exception as e:  # wallet balance fetch can fail
-                    pass
-
-            print("=" * 60)
-            print(f"  PORTFOLIO")
-            print(f"    Realized:    ${_session_pnl:+,.2f} ({_session_wins}W-{_session_losses}L, {_session_trades} trades)")
-            print(f"    Unrealized:  ${total_unrealized:+,.0f} ({len(_open_positions)} open, ${open_stakes:,.0f} staked)")
-            print(f"    Total P&L:   ${total_pnl:+,.2f}")
-            if wallet_balance is not None:
-                print(f"    Wallet:      ${wallet_balance:,.2f} USDC (live)")
-            else:
-                print(f"    Available:   ${effective_bankroll:,.0f} (tracked)")
-            print("=" * 60)
+                log.info(f"  PORTFOLIO: P&L ${total_pnl:+,.2f} "
+                         f"(${_session_pnl:+,.2f} realized, ${total_unrealized:+,.0f} unrealized) | "
+                         f"{_session_wins}W-{_session_losses}L | "
+                         f"Available: ${effective_bankroll:,.0f}{wallet_str}")
 
             # Print scheduled pre-match bets
             if _pre_match_scheduled:
