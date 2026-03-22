@@ -198,17 +198,32 @@
             const tickFont = { size: isMobile ? 10 : 12 };
             const pointSize = isMobile ? 3 : 5;
 
-            // PnL Chart
+            // PnL Chart — time-based x-axis, gradient color
             const ctx = document.getElementById('pnlChart').getContext('2d');
+
+            // Build segment colors: green when above 0, red when below
+            const segmentColor = (ctx) => {
+                const cur = ctx.p1.parsed.y;
+                return cur >= 0 ? '#3fb950' : '#f85149';
+            };
+
+            // Time labels from trade timestamps
+            const timeLabels = allData.pnl_curve.map(t => {
+                const d = new Date(t.timestamp);
+                return d.toLocaleDateString(undefined, {month:'short', day:'numeric'}) + ' ' +
+                       d.toLocaleTimeString(undefined, {hour:'2-digit', minute:'2-digit'});
+            });
+
             new Chart(ctx, {
                 type: 'line',
                 data: {
-                    labels: allData.pnl_curve.map((t, i) => '#' + (i + 1)),
+                    labels: timeLabels,
                     datasets: [{
                         label: 'Cumulative PnL ($)',
                         data: allData.pnl_curve.map(t => t.cumulative),
-                        borderColor: allData.pnl_curve.length > 0 && allData.pnl_curve[allData.pnl_curve.length-1].cumulative >= 0 ? '#3fb950' : '#f85149',
-                        backgroundColor: 'rgba(63, 185, 80, 0.1)',
+                        segment: { borderColor: segmentColor },
+                        borderColor: '#58a6ff',
+                        backgroundColor: 'rgba(88, 166, 255, 0.05)',
                         fill: true,
                         tension: 0.3,
                         borderWidth: isMobile ? 2 : 3,
@@ -224,6 +239,7 @@
                         legend: { display: false },
                         tooltip: {
                             callbacks: {
+                                title: (items) => timeLabels[items[0].dataIndex],
                                 label: (ctx) => {
                                     const t = allData.pnl_curve[ctx.dataIndex];
                                     return `${t.event}: $${t.pnl >= 0 ? '+' : ''}${t.pnl} (total: $${t.cumulative})`;
@@ -232,8 +248,14 @@
                         }
                     },
                     scales: {
-                        y: { grid: { color: '#21262d' }, ticks: { color: '#8b949e', font: tickFont, callback: v => '$' + v } },
-                        x: { grid: { color: '#21262d' }, ticks: { color: '#8b949e', font: tickFont, maxRotation: isMobile ? 0 : 45, autoSkip: true, maxTicksLimit: isMobile ? 8 : 20 } }
+                        y: {
+                            grid: { color: '#21262d' },
+                            ticks: { color: '#8b949e', font: tickFont, callback: v => '$' + v }
+                        },
+                        x: {
+                            grid: { color: '#21262d' },
+                            ticks: { color: '#8b949e', font: tickFont, maxRotation: isMobile ? 0 : 45, autoSkip: true, maxTicksLimit: isMobile ? 6 : 15 }
+                        }
                     }
                 }
             });
