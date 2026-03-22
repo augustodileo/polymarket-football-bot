@@ -1,6 +1,7 @@
 #!/bin/bash
-# Shared deploy script — used by both release.yml and deploy.yml
+# Shared deploy script — used by release.yml and deploy.yml
 # Expects env vars: BOT_MODE, BANKROLL, POLYMARKET_PRIVATE_KEY, POLYMARKET_FUNDER
+#                   GITHUB_TOKEN, GITHUB_REPO, PUSH_INTERVAL_SEC
 
 set -e
 cd ~/poly-bot
@@ -23,18 +24,23 @@ if [ -n "$POLYMARKET_FUNDER" ]; then
   sed -i 's|# polymarket_funder: ""|polymarket_funder: "'"$POLYMARKET_FUNDER"'"|' config.yaml
 fi
 
-# Build with version
-sudo docker build --build-arg VERSION=$VERSION -t poly-bot:$VERSION -t poly-bot:latest .
+# Export env vars for docker-compose
+export VERSION
+export BOT_MODE="${BOT_MODE:-paper}"
+export GITHUB_TOKEN="${GITHUB_TOKEN:-}"
+export GITHUB_REPO="${GITHUB_REPO:-}"
+export PUSH_INTERVAL_SEC="${PUSH_INTERVAL_SEC:-300}"
 
-# Restart
-sudo docker stop poly-bot 2>/dev/null || true
-sudo docker rm poly-bot 2>/dev/null || true
-sudo docker run -d --restart=always \
-  -v $(pwd)/config.yaml:/app/config.yaml \
-  -v $(pwd)/data:/app/data \
-  --name poly-bot \
-  poly-bot:$VERSION --${BOT_MODE:-paper}
+# Build and restart both containers
+sudo -E docker compose build
+sudo -E docker compose down
+sudo -E docker compose up -d
 
 sleep 5
+echo "=== Bot logs ==="
 sudo docker logs --tail 10 poly-bot
+echo ""
+echo "=== Dashboard logs ==="
+sudo docker logs --tail 5 poly-dash
+echo ""
 echo "Deploy complete: $VERSION"

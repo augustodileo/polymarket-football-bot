@@ -1,0 +1,29 @@
+services:
+  bot:
+    build:
+      context: .
+      args:
+        VERSION: ${VERSION:-dev}
+    image: poly-bot:${VERSION:-latest}
+    container_name: poly-bot
+    restart: always
+    volumes:
+      - ./config.yaml:/app/config.yaml:ro
+      - bot-data:/app/data
+    command: ["--${BOT_MODE:-paper}"]
+
+  dashboard:
+    build:
+      context: ./dashboard
+    container_name: poly-dash
+    restart: always
+    volumes:
+      - bot-data:/app/data:ro
+    environment:
+      - DATA_DIR=/app/data/${BOT_MODE:-paper}
+      - GITHUB_TOKEN=${GITHUB_TOKEN}
+      - GITHUB_REPO=${GITHUB_REPO}
+      - PUSH_INTERVAL_SEC=${PUSH_INTERVAL_SEC:-300}
+
+volumes:
+  bot-data:

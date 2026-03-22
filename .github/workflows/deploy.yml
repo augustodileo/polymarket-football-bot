@@ -19,7 +19,7 @@ jobs:
           host: ${{ secrets.DEPLOY_HOST }}
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
-          envs: BOT_MODE,BANKROLL,POLYMARKET_PRIVATE_KEY,POLYMARKET_FUNDER,DEPLOY_SCRIPT
+          envs: BOT_MODE,BANKROLL,POLYMARKET_PRIVATE_KEY,POLYMARKET_FUNDER,GITHUB_TOKEN,GITHUB_REPO,PUSH_INTERVAL_SEC,DEPLOY_SCRIPT
           script: |
             echo "$DEPLOY_SCRIPT" | base64 -d | bash
         env:
@@ -27,6 +27,9 @@ jobs:
           BANKROLL: ${{ vars.BANKROLL }}
           POLYMARKET_PRIVATE_KEY: ${{ secrets.POLYMARKET_PRIVATE_KEY }}
           POLYMARKET_FUNDER: ${{ secrets.POLYMARKET_FUNDER }}
+          GITHUB_TOKEN: ${{ secrets.DASHBOARD_GITHUB_TOKEN }}
+          GITHUB_REPO: ${{ github.repository }}
+          PUSH_INTERVAL_SEC: ${{ vars.PUSH_INTERVAL_SEC }}
           DEPLOY_SCRIPT: ${{ env.DEPLOY_SCRIPT }}
 
   verify:

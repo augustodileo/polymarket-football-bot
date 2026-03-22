@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PolyBot Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0d1117; color: #c9d1d9; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        h1 { color: #58a6ff; margin-bottom: 5px; }
+        .subtitle { color: #8b949e; margin-bottom: 20px; font-size: 14px; }
+        .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 25px; }
+        .card { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 16px; }
+        .card .label { color: #8b949e; font-size: 12px; text-transform: uppercase; }
+        .card .value { font-size: 28px; font-weight: bold; margin-top: 4px; }
+        .card .value.green { color: #3fb950; }
+        .card .value.red { color: #f85149; }
+        .card .value.blue { color: #58a6ff; }
+        .chart-container { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 20px; margin-bottom: 25px; }
+        .chart-container h2 { color: #c9d1d9; font-size: 16px; margin-bottom: 15px; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        th { text-align: left; padding: 10px 8px; color: #8b949e; border-bottom: 1px solid #30363d; font-weight: 500; }
+        td { padding: 8px; border-bottom: 1px solid #21262d; }
+        .win { color: #3fb950; }
+        .loss { color: #f85149; }
+        .open-positions { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 20px; margin-bottom: 25px; }
+        .open-positions h2 { color: #c9d1d9; font-size: 16px; margin-bottom: 15px; }
+        .no-data { text-align: center; color: #8b949e; padding: 40px; }
+        .filters { margin-bottom: 15px; display: flex; gap: 10px; align-items: center; }
+        .filters select, .filters input { background: #0d1117; border: 1px solid #30363d; color: #c9d1d9; padding: 6px 10px; border-radius: 6px; font-size: 13px; }
+        .updated { color: #8b949e; font-size: 12px; text-align: right; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>PolyBot Dashboard</h1>
+        <p class="subtitle">Polymarket Football Trading Bot</p>
+        <p class="updated" id="updated"></p>
+
+        <div class="cards">
+            <div class="card"><div class="label">Total P&L</div><div class="value green" id="pnl">-</div></div>
+            <div class="card"><div class="label">Record</div><div class="value blue" id="record">-</div></div>
+            <div class="card"><div class="label">Win Rate</div><div class="value" id="winrate">-</div></div>
+            <div class="card"><div class="label">ROI</div><div class="value" id="roi">-</div></div>
+            <div class="card"><div class="label">Trades</div><div class="value blue" id="trades">-</div></div>
+            <div class="card"><div class="label">Open</div><div class="value" id="open">-</div></div>
+        </div>
+
+        <div class="chart-container">
+            <h2>Cumulative P&L</h2>
+            <canvas id="pnlChart" height="80"></canvas>
+        </div>
+
+        <div class="open-positions" id="openSection" style="display:none">
+            <h2>Open Positions</h2>
+            <table id="openTable">
+                <thead><tr><th>Match</th><th>Side</th><th>Entry</th><th>Stake</th><th>Edge</th></tr></thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+        <div class="chart-container">
+            <h2>P&L by League</h2>
+            <canvas id="leagueChart" height="60"></canvas>
+        </div>
+
+        <div class="chart-container">
+            <h2>Trade History</h2>
+            <div class="filters">
+                <select id="filterLeague"><option value="">All Leagues</option></select>
+                <select id="filterOutcome"><option value="">All</option><option value="WIN">Wins</option><option value="LOSS">Losses</option></select>
+                <input type="date" id="filterDate" />
+            </div>
+            <table id="tradesTable">
+                <thead><tr><th>Date</th><th>Match</th><th>League</th><th>Side</th><th>Score</th><th>Edge</th><th>Stake</th><th>Result</th><th>P&L</th></tr></thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const DATA_URL = 'dashboard-data.json';
+        let allData = null;
+
+        async function fetchData() {
+            try {
+                const resp = await fetch(DATA_URL + '?t=' + Date.now());
+                allData = await resp.json();
+                render();
+            } catch (e) {
+                document.querySelector('.container').innerHTML += '<div class="no-data">No data yet. Bot needs to push dashboard-data.json.</div>';
+            }
+        }
+
+        function render() {
+            const s = allData.summary;
+
+            // Cards
+            const pnlEl = document.getElementById('pnl');
+            pnlEl.textContent = '$' + s.total_pnl.toLocaleString(undefined, {minimumFractionDigits: 2});
+            pnlEl.className = 'value ' + (s.total_pnl >= 0 ? 'green' : 'red');
+
+            document.getElementById('record').textContent = s.wins + 'W-' + s.losses + 'L';
+            document.getElementById('winrate').textContent = s.win_rate + '%';
+            document.getElementById('winrate').className = 'value ' + (s.win_rate >= 60 ? 'green' : s.win_rate < 50 ? 'red' : '');
+            document.getElementById('roi').textContent = (s.roi >= 0 ? '+' : '') + s.roi + '%';
+            document.getElementById('roi').className = 'value ' + (s.roi >= 0 ? 'green' : 'red');
+            document.getElementById('trades').textContent = s.total_trades;
+            document.getElementById('open').textContent = allData.open_positions.length;
+            document.getElementById('updated').textContent = 'Updated: ' + new Date(allData.updated_at).toLocaleString();
+
+            // P&L Chart
+            const ctx = document.getElementById('pnlChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: allData.pnl_curve.map((t, i) => '#' + (i + 1)),
+                    datasets: [{
+                        label: 'Cumulative P&L ($)',
+                        data: allData.pnl_curve.map(t => t.cumulative),
+                        borderColor: '#3fb950',
+                        backgroundColor: 'rgba(63, 185, 80, 0.1)',
+                        fill: true,
+                        tension: 0.3,
+                        pointBackgroundColor: allData.pnl_curve.map(t => t.outcome === 'WIN' ? '#3fb950' : '#f85149'),
+                        pointRadius: 5,
+                    }]
+                },
+                options: {
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: (ctx) => {
+                                    const t = allData.pnl_curve[ctx.dataIndex];
+                                    return `${t.event}: $${t.pnl >= 0 ? '+' : ''}${t.pnl} (total: $${t.cumulative})`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: { grid: { color: '#21262d' }, ticks: { color: '#8b949e', callback: v => '$' + v } },
+                        x: { grid: { color: '#21262d' }, ticks: { color: '#8b949e' } }
+                    }
+                }
+            });
+
+            // League Chart
+            const leagues = Object.entries(allData.by_league).sort((a, b) => b[1].pnl - a[1].pnl);
+            const lctx = document.getElementById('leagueChart').getContext('2d');
+            new Chart(lctx, {
+                type: 'bar',
+                data: {
+                    labels: leagues.map(l => l[0]),
+                    datasets: [{
+                        label: 'P&L ($)',
+                        data: leagues.map(l => l[1].pnl),
+                        backgroundColor: leagues.map(l => l[1].pnl >= 0 ? '#3fb950' : '#f85149'),
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: { grid: { color: '#21262d' }, ticks: { color: '#8b949e', callback: v => '$' + v } },
+                        x: { grid: { color: '#21262d' }, ticks: { color: '#8b949e' } }
+                    }
+                }
+            });
+
+            // Open positions
+            if (allData.open_positions.length > 0) {
+                document.getElementById('openSection').style.display = 'block';
+                const tbody = document.querySelector('#openTable tbody');
+                tbody.innerHTML = allData.open_positions.map(p => `
+                    <tr>
+                        <td>${p.event}</td>
+                        <td>${p.side}</td>
+                        <td>${p.score_at_entry} min ${p.minute}</td>
+                        <td>$${p.stake.toFixed(0)}</td>
+                        <td>${p.edge_pct.toFixed(1)}%</td>
+                    </tr>
+                `).join('');
+            }
+
+            // Populate league filter
+            const sel = document.getElementById('filterLeague');
+            leagues.forEach(l => {
+                const opt = document.createElement('option');
+                opt.value = l[0]; opt.textContent = l[0];
+                sel.appendChild(opt);
+            });
+
+            // Trade history
+            renderTrades();
+            document.getElementById('filterLeague').addEventListener('change', renderTrades);
+            document.getElementById('filterOutcome').addEventListener('change', renderTrades);
+            document.getElementById('filterDate').addEventListener('change', renderTrades);
+        }
+
+        function renderTrades() {
+            const league = document.getElementById('filterLeague').value;
+            const outcome = document.getElementById('filterOutcome').value;
+            const date = document.getElementById('filterDate').value;
+
+            let trades = allData.pnl_curve;
+            if (league) trades = trades.filter(t => t.league === league);
+            if (outcome) trades = trades.filter(t => t.outcome === outcome);
+            if (date) trades = trades.filter(t => (t.timestamp || '').startsWith(date));
+
+            const tbody = document.querySelector('#tradesTable tbody');
+            tbody.innerHTML = trades.map(t => `
+                <tr>
+                    <td>${(t.timestamp || '').slice(0, 10)}</td>
+                    <td>${t.event}</td>
+                    <td>${t.league || '-'}</td>
+                    <td>${t.side}</td>
+                    <td>${t.score_at_entry || '-'} → ${t.final_score || '-'}</td>
+                    <td>${t.edge_pct}%</td>
+                    <td>$${t.stake.toFixed(0)}</td>
+                    <td class="${t.outcome === 'WIN' ? 'win' : 'loss'}">${t.outcome}</td>
+                    <td class="${t.pnl >= 0 ? 'win' : 'loss'}">$${t.pnl >= 0 ? '+' : ''}${t.pnl.toFixed(2)}</td>
+                </tr>
+            `).join('');
+        }
+
+        fetchData();
+        // Auto-refresh every 5 minutes
+        setInterval(fetchData, 300000);
+    </script>
+</body>
+</html>

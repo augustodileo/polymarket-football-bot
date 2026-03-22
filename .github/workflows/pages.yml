@@ -1,0 +1,39 @@
+name: Deploy Dashboard
+
+on:
+  push:
+    branches: [main]
+    paths: [dashboard/index.html]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  deploy-pages:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Deploy to gh-pages
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Create orphan gh-pages branch if it doesn't exist
+          git fetch origin gh-pages 2>/dev/null || true
+          git checkout --orphan gh-pages-tmp
+
+          # Keep only the dashboard HTML
+          git rm -rf . 2>/dev/null || true
+          cp dashboard/index.html index.html
+
+          # Create a placeholder data file
+          echo '{"summary":{"total_trades":0,"wins":0,"losses":0,"win_rate":0,"total_pnl":0,"total_staked":0,"roi":0},"open_positions":[],"pnl_curve":[],"by_league":{},"by_day":{}}' > dashboard-data.json
+
+          git add index.html dashboard-data.json
+          git commit -m "Deploy dashboard"
+          git push origin HEAD:gh-pages --force
