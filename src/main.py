@@ -19,7 +19,7 @@ from dataclasses import dataclass
 import logging
 import sys
 import time
-from datetime import date, datetime, timezone
+from datetime import datetime, timezone
 from pathlib import Path
 
 # Project root is one level up from src/
@@ -33,7 +33,6 @@ import yaml
 from polymarket_apis import PolymarketGammaClient, PolymarketClobClient, PolymarketReadOnlyClobClient
 
 from engine import TradeSignal, evaluate
-from stats import MatchStats, BookmakerOdds
 
 logging.basicConfig(
     level=logging.INFO,
@@ -87,7 +86,11 @@ def _trades_file_for_today() -> Path:
 
 
 def save_state():
-    """Save only what needs to survive a restart: open positions + cumulative P&L."""
+    """Save only what needs to survive a restart: open positions + cumulative P&L.
+
+    Uses atomic write (temp file + rename) to prevent corruption if the process
+    is killed mid-write.
+    """
     TRADES_DIR.mkdir(exist_ok=True)
     state = {
         "open_positions": {str(k): v for k, v in _open_positions.items()},
@@ -97,8 +100,10 @@ def save_state():
         "cumulative_trades": _session_trades,
         "saved_at": datetime.now(timezone.utc).isoformat(),
     }
-    with open(STATE_FILE, "w") as f:
+    tmp_file = STATE_FILE.with_suffix(".tmp")
+    with open(tmp_file, "w") as f:
         json.dump(state, f, indent=2)
+    tmp_file.rename(STATE_FILE)
 
 
 def load_state():
@@ -152,33 +157,27 @@ def load_config() -> dict:
 
 
 def _guess_league_cfg(event_slug: str, leagues: dict) -> tuple[str, dict]:
-    """Try to match an event slug to a configured league. Returns (key, cfg) or a fallback."""
+    """Try to match an event slug to a configured league.
+
+    Polymarket slugs start with the league code: "epl-ars-che-2026-03-22".
+    Falls back to using the slug prefix as the league name.
+    """
     slug = (event_slug or "").lower()
-    # Polymarket slugs start with league code: "epl-ars-che-...", "lal-bar-ray-..."
-    for league_key, league_cfg in leagues.items():
-        # Match by polymarket tag slug prefix patterns
-        tag = str(league_cfg.get("polymarket_tag", ""))
-        if tag in str(getattr(event_slug, 'tags', '') or ''):
-            return league_key, league_cfg
-    # Fallback — use slug prefix to guess API-Football league ID for odds
-    _SLUG_TO_LEAGUE = {
-        "epl": 39, "lal": 140, "sea": 135, "bun": 78, "fl1": 61,
-        "ucl": 2, "uel": 3, "mls": 253, "ere": 88, "por": 94,
-        "kor": 136, "jap": 98, "bra": 71, "arg": 128, "mex": 262,
-        "spl": 307, "chi": 169, "aus": 188, "ind": 323,
-        "col": 239, "cdr": 143, "dfb": 81, "cde": 66, "itc": 137,
-        "efa": 45, "efl": 46, "acn": 6, "con": 11, "cof": 15,
-        "uef": 848, "caf": 12, "fif": 1, "rus": 235,
-    }
     prefix = slug.split("-")[0] if "-" in slug else ""
-    api_id = _SLUG_TO_LEAGUE.get(prefix, 0)
-    return prefix or "_unknown", {"polymarket_tag": 0, "api_football_id": api_id, "name": prefix.upper() or "Unknown"}
+    # Match slug prefix against configured league keys (epl, mls, etc.)
+    for league_key, league_cfg in leagues.items():
+        if league_key.lower() == prefix:
+            return league_key, league_cfg
+    return prefix or "_unknown", {"polymarket_tag": 0, "name": prefix.upper() or "Unknown"}
+
+
+GLOBAL_FOOTBALL_TAG = 100350  # Polymarket tag that covers all football/soccer
 
 
 def discover_football_events(gamma: PolymarketGammaClient, leagues: dict) -> list:
     """Find all active football match events across all leagues.
 
-    Uses configured league tags first, then sweeps the global football tag (100350)
+    Uses configured league tags first, then sweeps the global football tag
     to catch leagues that might be miscategorized or not in our config.
     """
     all_events = []
@@ -206,7 +205,7 @@ def discover_football_events(gamma: PolymarketGammaClient, leagues: dict) -> lis
 
     # Pass 2: global football tag — catches Korean league, cups, etc.
     try:
-        global_events = gamma.get_events(tag_id=100350, active=True, closed=False, limit=100)
+        global_events = gamma.get_events(tag_id=GLOBAL_FOOTBALL_TAG, active=True, closed=False, limit=100)
         new_count = 0
         for e in global_events:
             if e.id in seen_ids:
@@ -288,8 +287,8 @@ def check_liquidity(
             mid_val = midpoint.value
         else:
             mid_val = 0
-    except Exception:
-        mid_val = 0
+    except Exception as e:
+        log.debug(f"Midpoint fetch failed: {e}"); mid_val = 0
 
     try:
         book = clob_ro.get_order_book(token_id)
@@ -310,7 +309,7 @@ def check_liquidity(
             for bid in (comp_book.bids or []):
                 cross_asks.append(type(bid)(price=round(1.0 - bid.price, 4), size=bid.size))
             cross_asks.sort(key=lambda x: x.price)
-        except Exception:
+        except Exception as e:  # cross-book fetch can fail silently
             pass
 
     # Merge native asks + cross asks, sorted by price
@@ -1134,7 +1133,7 @@ def run_loop(config: dict, mode: str):
                     for re in resolved_events:
                         if re.id not in existing_ids:
                             events.append((re, "_resolved", {}))
-                except Exception:
+                except Exception as e:  # resolved event fetch can fail
                     pass  # fall back to normal events list
 
             resolve_ended_matches(events, web3_client, mode, auto_redeem)
@@ -1207,8 +1206,6 @@ def run_loop(config: dict, mode: str):
                     home_goals=home_goals,
                     away_goals=away_goals,
                     minute=minute,
-                    stats=MatchStats(),
-                    odds=BookmakerOdds(),
                     markets=markets,
                     bankroll=effective_bankroll,
                     config_risk=risk,
@@ -1307,7 +1304,6 @@ def run_loop(config: dict, mode: str):
                                 except (ValueError, TypeError):
                                     pass
                             # Get current price from live market data
-                            import json as _json
                             for m in (ev.markets or []):
                                 if m.sports_market_type != "moneyline":
                                     continue
@@ -1317,7 +1313,7 @@ def run_loop(config: dict, mode: str):
                                 if any(w in mq for w in pq.split() if len(w) >= 4):
                                     p = m.outcome_prices
                                     if isinstance(p, str):
-                                        p = _json.loads(p)
+                                        p = json.loads(p)
                                     if p:
                                         if pos["side"] == "YES":
                                             current_price = float(p[0])
@@ -1354,7 +1350,7 @@ def run_loop(config: dict, mode: str):
             if mode == "live" and web3_client is not None:
                 try:
                     wallet_balance = web3_client.get_usdc_balance() / 1_000_000
-                except Exception:
+                except Exception as e:  # wallet balance fetch can fail
                     pass
 
             print("=" * 60)

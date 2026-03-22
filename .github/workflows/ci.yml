@@ -42,6 +42,6 @@ jobs:
           docker build --build-arg VERSION=$VERSION -t poly-bot:$VERSION .
           cp config.example.yaml config.yaml
           docker run --rm -v $(pwd)/config.yaml:/app/config.yaml poly-bot:$VERSION --ephemeral &
-          sleep 15
+          sleep 30
           kill $! 2>/dev/null || true
           echo "Docker smoke test passed"

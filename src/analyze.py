@@ -6,7 +6,7 @@ Usage:
     uv run analyze.py              # analyze all paper trades
     uv run analyze.py --today      # analyze today's paper trades only
     uv run analyze.py --date 2026-03-21          # specific day
-    uv run analyze.py --from 2026-03-20 --to 2026-03-22  # date range
+    uv run analyze.py --date-from 2026-03-20 --date-to 2026-03-22  # date range
     uv run analyze.py --live       # analyze live trades
     uv run analyze.py --all        # analyze both paper and live
     uv run analyze.py --wipe-paper # delete all paper data and start fresh

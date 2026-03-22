@@ -20,7 +20,6 @@ from main import (
     redeem_winning_position, markets_to_dicts, print_signal, LiquidityInfo,
 )
 from engine import TradeSignal
-from stats import MatchStats, BookmakerOdds
 
 
 def _make_market_mock(question="Will A win?", smt="moneyline", prices=None,

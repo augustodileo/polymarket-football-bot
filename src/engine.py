@@ -17,7 +17,6 @@ The "true probability" comes from a simple model:
 import logging
 from dataclasses import dataclass
 
-from stats import BookmakerOdds, MatchStats
 
 log = logging.getLogger(__name__)
 
@@ -176,8 +175,6 @@ def evaluate(
     home_goals: int,
     away_goals: int,
     minute: int,
-    stats: MatchStats,
-    odds: BookmakerOdds,
     markets: list[dict],
     bankroll: float,
     config_risk: dict,

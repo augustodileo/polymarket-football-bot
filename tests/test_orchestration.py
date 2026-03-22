@@ -20,7 +20,6 @@ from main import (
     _trades_file_for_today,
 )
 from engine import TradeSignal
-from stats import BookmakerOdds, MatchStats
 
 
 # ── Helpers ─────────────────────────────────────────────────
@@ -123,7 +122,7 @@ class TestGuessLeagueCfg:
 
     def test_known_slug_prefix(self):
         key, cfg = _guess_league_cfg("epl-ars-che-2026-03-22", self.LEAGUES)
-        assert cfg["api_football_id"] == 39
+        assert cfg["name"] == "Premier League"
 
     def test_unknown_slug(self):
         key, cfg = _guess_league_cfg("xyz-team1-team2-2026-01-01", self.LEAGUES)
@@ -131,7 +130,7 @@ class TestGuessLeagueCfg:
 
     def test_korean_league(self):
         key, cfg = _guess_league_cfg("kor-team1-team2-2026-01-01", self.LEAGUES)
-        assert cfg["api_football_id"] == 136
+        assert key == "kor"
 
 
 # ── discover_football_events ────────────────────────────────

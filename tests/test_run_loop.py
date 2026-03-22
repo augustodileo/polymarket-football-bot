@@ -24,7 +24,6 @@ from main import (
     _trades_file_for_today, _init_data_paths,
 )
 from engine import TradeSignal, evaluate
-from stats import MatchStats, BookmakerOdds
 
 
 def _mk_market(question, prices, tokens=None, cid="c"):
@@ -204,7 +203,7 @@ class TestLiveMatchEvaluation:
              "token_ids": ["ay", "an"], "sports_market_type": "moneyline"},
         ]
         signal = evaluate("Home", "Away", 2, 0, 85,
-                          MatchStats(), BookmakerOdds(), markets, 10000,
+                          markets, 10000,
                           {"min_edge_pct": 2.0, "kelly_fraction": 0.25, "max_single_stake": 1000})
         assert signal.action == "BUY"
         assert signal.side == "YES"
@@ -221,7 +220,7 @@ class TestLiveMatchEvaluation:
              "token_ids": ["ay", "an"], "sports_market_type": "moneyline"},
         ]
         signal = evaluate("Home", "Away", 0, 0, 90,
-                          MatchStats(), BookmakerOdds(), markets, 10000,
+                          markets, 10000,
                           {"min_edge_pct": 2.0, "kelly_fraction": 0.25, "max_single_stake": 1000})
         assert signal.action == "NO_TRADE"
 

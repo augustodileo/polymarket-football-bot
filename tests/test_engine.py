@@ -6,7 +6,6 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 import pytest
 from engine import _estimate_probability, _find_market, evaluate, TradeSignal
-from stats import MatchStats, BookmakerOdds
 
 
 # ── _estimate_probability ───────────────────────────────────
@@ -202,7 +201,7 @@ class TestEvaluate:
              "token_ids": ["e", "f"], "sports_market_type": "moneyline"},
         ]
         signal = evaluate("Team A", "Team B", 0, 0, 89,
-                          MatchStats(), BookmakerOdds(), markets, 10000, self.RISK)
+                          markets, 10000, self.RISK)
         assert signal.action == "NO_TRADE"
 
     def test_trade_when_big_lead_underpriced(self):
@@ -216,7 +215,7 @@ class TestEvaluate:
              "token_ids": ["e", "f"], "sports_market_type": "moneyline"},
         ]
         signal = evaluate("Team A", "Team B", 2, 0, 85,
-                          MatchStats(), BookmakerOdds(), markets, 10000, self.RISK)
+                          markets, 10000, self.RISK)
         assert signal.action == "BUY"
         assert signal.side == "YES"
         assert signal.edge_pct > 2.0
@@ -233,7 +232,7 @@ class TestEvaluate:
              "token_ids": ["e", "f"], "sports_market_type": "moneyline"},
         ]
         signal = evaluate("Home", "Away", 1, 0, 82,
-                          MatchStats(), BookmakerOdds(), markets, 10000, self.RISK)
+                          markets, 10000, self.RISK)
         # Should target Away win market with NO side
         if signal.action == "BUY":
             assert signal.side == "NO"
@@ -250,7 +249,7 @@ class TestEvaluate:
              "token_ids": ["e", "f"], "sports_market_type": "moneyline"},
         ]
         signal = evaluate("Home", "Away", 3, 0, 88,
-                          MatchStats(), BookmakerOdds(), markets, 100000,
+                          markets, 100000,
                           {**self.RISK, "max_single_stake": 500})
         if signal.action == "BUY":
             assert signal.stake <= 500
@@ -258,14 +257,14 @@ class TestEvaluate:
     def test_returns_trade_signal_dataclass(self):
         """Should always return a TradeSignal."""
         signal = evaluate("A", "B", 0, 0, 80,
-                          MatchStats(), BookmakerOdds(), self.MARKETS, 10000, self.RISK)
+                          self.MARKETS, 10000, self.RISK)
         assert isinstance(signal, TradeSignal)
         assert signal.action in ("BUY", "NO_TRADE")
 
     def test_no_markets_returns_no_trade(self):
         """Empty markets list → NO_TRADE."""
         signal = evaluate("A", "B", 0, 0, 80,
-                          MatchStats(), BookmakerOdds(), [], 10000, self.RISK)
+                          [], 10000, self.RISK)
         assert signal.action == "NO_TRADE"
 
 
@@ -302,7 +301,7 @@ class TestEdgeCases:
              "token_ids": ["e", "f"], "sports_market_type": "moneyline"},
         ]
         signal = evaluate("A", "B", 0, 0, 92,
-                          MatchStats(), BookmakerOdds(), markets, 10000,
+                          markets, 10000,
                           {"min_edge_pct": 2.0, "kelly_fraction": 0.25, "max_single_stake": 1000})
         assert signal.action == "NO_TRADE"
 
@@ -317,7 +316,7 @@ class TestEdgeCases:
              "token_ids": ["e", "f"], "sports_market_type": "moneyline"},
         ]
         signal = evaluate("Home", "Away", 0, 2, 83,
-                          MatchStats(), BookmakerOdds(), markets, 10000,
+                          markets, 10000,
                           {"min_edge_pct": 2.0, "kelly_fraction": 0.25, "max_single_stake": 1000})
         if signal.action == "BUY":
             assert signal.side == "YES"
@@ -334,7 +333,7 @@ class TestEdgeCases:
              "token_ids": ["e", "f"], "sports_market_type": "moneyline"},
         ]
         signal = evaluate("Home", "Away", 0, 1, 82,
-                          MatchStats(), BookmakerOdds(), markets, 10000,
+                          markets, 10000,
                           {"min_edge_pct": 2.0, "kelly_fraction": 0.25, "max_single_stake": 1000})
         if signal.action == "BUY":
             assert signal.side == "NO"
@@ -351,7 +350,7 @@ class TestEdgeCases:
              "token_ids": ["e", "f"], "sports_market_type": "moneyline"},
         ]
         signal = evaluate("Home", "Away", 0, 0, 82,
-                          MatchStats(), BookmakerOdds(), markets, 10000,
+                          markets, 10000,
                           {"min_edge_pct": 0.5, "kelly_fraction": 0.25, "max_single_stake": 1000})
         if signal.action == "BUY":
             assert signal.side == "NO"
@@ -367,7 +366,7 @@ class TestEdgeCases:
              "token_ids": ["e", "f"], "sports_market_type": "moneyline"},
         ]
         signal = evaluate("A", "B", 2, 0, 90,
-                          MatchStats(), BookmakerOdds(), markets, 10000,
+                          markets, 10000,
                           {"min_edge_pct": 2.0, "kelly_fraction": 0.25, "max_single_stake": 1000})
         assert signal.action == "NO_TRADE"
 
@@ -382,7 +381,7 @@ class TestEdgeCases:
              "token_ids": ["e", "f"], "sports_market_type": "moneyline"},
         ]
         signal = evaluate("Home", "Away", 2, 0, 88,
-                          MatchStats(), BookmakerOdds(), markets, 10000,
+                          markets, 10000,
                           {"min_edge_pct": 10.0, "kelly_fraction": 0.25, "max_single_stake": 1000})
         assert signal.action == "NO_TRADE"
         assert "too small" in signal.reason.lower() or "edge" in signal.reason.lower()
