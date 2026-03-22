@@ -1052,7 +1052,7 @@ def run_loop(config: dict, mode: str):
 #  |_|   \\___/|_|\\__, ||____/ \\___/ \\__|                #
 #                |___/                                   #
 #                                                        #
-#   Polymarket Football Trading Bot  v{__version__:<18s}#
+#   Polymarket Football Trading Bot  {__version__:<19s}#
 #   Mode: {tag:<44s}#
 #                                                        #
 ##########################################################
