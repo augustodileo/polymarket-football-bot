@@ -6,7 +6,7 @@
 set -e
 cd ~/poly-bot
 
-git fetch --tags
+git fetch --tags --force
 git pull origin main
 
 VERSION=$(git describe --tags --always 2>/dev/null || echo "dev")
@@ -35,9 +35,9 @@ export PUSH_INTERVAL_SEC="${PUSH_INTERVAL_SEC:-300}"
 sudo docker stop poly-bot poly-dash polymarket-football-bot polymarket-football-dash 2>/dev/null || true
 sudo docker rm poly-bot poly-dash polymarket-football-bot polymarket-football-dash 2>/dev/null || true
 
-# Build and restart both containers via compose
-sudo -E docker compose build
-sudo -E docker compose down
+# Down first, then build with explicit VERSION arg to bust cache, then up
+sudo -E docker compose down --remove-orphans || true
+sudo -E docker compose build --build-arg "VERSION=$VERSION"
 sudo -E docker compose up -d
 
 sleep 5
