@@ -1399,9 +1399,9 @@ def run_loop(config: dict, mode: str):
                 if ev.live:
                     score = ev.score or "?"
                     minute = ev.elapsed or "?"
-                    todays_matches.append(f"{title} [{score} min {minute}]")
+                    todays_matches.append({"title": title, "status": "live", "score": score, "minute": minute})
                 elif 0 < hours_until <= 24:
-                    todays_matches.append(f"{title} [KO {st.strftime('%H:%M')} UTC]")
+                    todays_matches.append({"title": title, "status": "upcoming", "kickoff": st.isoformat()})
 
             # Persist for dashboard
             _todays_schedule.clear()
@@ -1410,7 +1410,10 @@ def run_loop(config: dict, mode: str):
             if todays_matches:
                 log.info(f"  NEXT 24H ({len(todays_matches)} matches):")
                 for m in todays_matches:
-                    log.info(f"    {m}")
+                    if m["status"] == "live":
+                        log.info(f"    {m['title']} [{m['score']} min {m['minute']}]")
+                    else:
+                        log.info(f"    {m['title']} [{m['kickoff']}]")
             else:
                 log.info("  NEXT 24H: no matches")
 

@@ -369,11 +369,21 @@
 
             // Today's matches
             var todayList = allData.todays_schedule || [];
+            var fmtDateTime = function(iso) {
+                if (!iso) return '-';
+                var d = new Date(iso);
+                return d.toLocaleDateString([], {month: 'short', day: 'numeric'}) + ' ' +
+                       d.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
+            };
             if (todayList.length > 0) {
                 document.getElementById('todaySection').style.display = 'block';
                 document.getElementById('todayHeader').textContent = "Next 24h (" + todayList.length + " matches)";
                 document.getElementById('todayList').innerHTML = todayList.map(function(m) {
-                    return '<li style="padding:4px 0;border-bottom:1px solid #21262d;font-size:14px">' + m + '</li>';
+                    var text;
+                    if (typeof m === 'string') { text = m; }
+                    else if (m.status === 'live') { text = m.title + ' [' + m.score + ' min ' + m.minute + ']'; }
+                    else { text = m.title + ' — ' + fmtDateTime(m.kickoff); }
+                    return '<li style="padding:4px 0;border-bottom:1px solid #21262d;font-size:14px">' + text + '</li>';
                 }).join('');
             } else {
                 document.getElementById('todaySection').style.display = 'block';
@@ -386,8 +396,8 @@
                 document.getElementById('schedSection').style.display = 'block';
                 const stbody = document.querySelector('#schedTable tbody');
                 stbody.innerHTML = allData.scheduled_bets.map(s => {
-                    const ko = s.kickoff ? new Date(s.kickoff).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'}) : '-';
-                    const ba = s.bet_at ? new Date(s.bet_at).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'}) : '-';
+                    const ko = fmtDateTime(s.kickoff);
+                    const ba = fmtDateTime(s.bet_at);
                     return `<tr>
                         <td>${s.event}</td>
                         <td>${s.fav_team}</td>
