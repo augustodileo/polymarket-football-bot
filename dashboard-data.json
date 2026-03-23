@@ -1,5 +1,6 @@
 {
-  "updated_at": "2026-03-23T20:44:57.875742+00:00",
+  "version": "dev",
+  "updated_at": "2026-03-23T20:51:01.385453+00:00",
   "summary": {
     "total_trades": 23,
     "wins": 20,
@@ -28,6 +29,8 @@
       "bet_at": "2026-03-25T17:15:00+00:00"
     }
   ],
+  "todays_schedule": [],
+  "upcoming_schedule": [],
   "pnl_curve": [
     {
       "timestamp": "2026-03-21T21:44:26.791886+00:00",
