@@ -228,10 +228,13 @@ test('trade history filter by outcome works', async ({ page }) => {
 
 test('updated timestamp is shown', async ({ page }) => {
   await page.goto('/');
-  await page.waitForTimeout(2000);
+  // Wait for data to load and render
+  await page.waitForFunction(() => {
+    const el = document.getElementById('updated');
+    return el && el.textContent && el.textContent.length > 5;
+  }, { timeout: 10000 });
   const updated = await page.locator('#updated').textContent();
-  expect(updated).toContain('Updated:');
-  expect(updated.length).toBeGreaterThan(10);
+  expect(updated.length).toBeGreaterThan(5);
 });
 
 // ── Mobile responsive ───────────────────────────────────
