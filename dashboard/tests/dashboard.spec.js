@@ -215,7 +215,10 @@ test('trade history filter by league works', async ({ page }) => {
 
 test('trade history filter by outcome works', async ({ page }) => {
   await page.goto('/');
-  await page.waitForTimeout(2000);
+  // Wait for trades table to render before filtering
+  await page.waitForFunction(() => {
+    return document.querySelectorAll('#tradesTable tbody tr').length > 0;
+  }, { timeout: 15000 });
   await page.selectOption('#filterOutcome', 'LOSS');
   await page.waitForTimeout(500);
   const rows = page.locator('#tradesTable tbody tr');
