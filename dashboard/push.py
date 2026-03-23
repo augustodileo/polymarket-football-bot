@@ -136,6 +136,7 @@ def build_dashboard_data() -> dict:
         })
 
     return {
+        "version": state.get("version", "dev"),
         "updated_at": datetime.now(timezone.utc).isoformat(),
         "summary": {
             "total_trades": len(trades),
@@ -148,6 +149,8 @@ def build_dashboard_data() -> dict:
         },
         "open_positions": open_positions,
         "scheduled_bets": scheduled_bets,
+        "todays_schedule": state.get("todays_schedule", []),
+        "upcoming_schedule": state.get("upcoming_schedule", []),
         "pnl_curve": pnl_curve,
         "by_league": by_league,
         "by_day": by_day,

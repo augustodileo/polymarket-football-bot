@@ -82,6 +82,10 @@ _session_wins: int = 0
 _session_losses: int = 0
 _session_trades: int = 0
 
+# Today's schedule (updated each poll cycle, persisted for dashboard)
+_todays_schedule: list[str] = []
+_upcoming_schedule: list[str] = []
+
 
 # ── State Persistence ──────────────────────────────────────
 
@@ -112,8 +116,11 @@ def save_state():
         }
 
     state = {
+        "version": __version__,
         "open_positions": {str(k): v for k, v in _open_positions.items()},
         "scheduled_bets": scheduled,
+        "todays_schedule": _todays_schedule,
+        "upcoming_schedule": _upcoming_schedule,
         "cumulative_pnl": _session_pnl,
         "cumulative_wins": _session_wins,
         "cumulative_losses": _session_losses,
@@ -1408,6 +1415,12 @@ def run_loop(config: dict, mode: str):
                         upcoming_matches.append((hours_until, f"{title} [KO {st.strftime('%b %d %H:%M')} UTC]"))
 
             upcoming_matches.sort()
+
+            # Persist for dashboard
+            _todays_schedule.clear()
+            _todays_schedule.extend(todays_matches)
+            _upcoming_schedule.clear()
+            _upcoming_schedule.extend(m for _, m in upcoming_matches[:10])
 
             if todays_matches:
                 log.info(f"  TODAY ({len(todays_matches)} matches):")
