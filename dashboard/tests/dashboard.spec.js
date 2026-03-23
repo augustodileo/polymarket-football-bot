@@ -198,10 +198,13 @@ test('trade history shows all trades', async ({ page }) => {
 
 test('trade history shows market question in Bet column', async ({ page }) => {
   await page.goto('/');
-  await page.waitForTimeout(2000);
+  await page.waitForFunction(() => {
+    return document.querySelectorAll('#tradesTable tbody tr').length > 0;
+  }, { timeout: 15000 });
   const firstRow = page.locator('#tradesTable tbody tr').first();
   const text = await firstRow.textContent();
-  expect(text).toContain('Will X win');
+  // Newest trade first (reversed) — Match 3 has "Will Z win"
+  expect(text).toContain('Will Z win');
 });
 
 test('trade history filter by league works', async ({ page }) => {
