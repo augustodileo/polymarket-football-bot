@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-03-23T00:56:31.817563+00:00",
+  "updated_at": "2026-03-23T01:01:32.370454+00:00",
   "summary": {
     "total_trades": 22,
     "wins": 19,
@@ -9,7 +9,20 @@
     "total_staked": 21022.43,
     "roi": -5.7
   },
-  "open_positions": [],
+  "open_positions": [
+    {
+      "event": "San Diego FC vs. Real Salt Lake",
+      "side": "NO",
+      "market": "Will Real Salt Lake win on 2026-03-22?",
+      "stake": 1000,
+      "entry_price": 0.966,
+      "edge_pct": 3.2635338162629757,
+      "score_at_entry": "2-1",
+      "minute": 82,
+      "profit_if_win": 35.19,
+      "loss_if_lose": 999.81
+    }
+  ],
   "scheduled_bets": [
     {
       "event": "SC Freiburg vs. FC Bayern M\u00fcnchen",
