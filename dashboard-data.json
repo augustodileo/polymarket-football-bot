@@ -1,29 +1,16 @@
 {
   "version": "v1.6.8",
-  "updated_at": "2026-03-23T23:50:56.558063+00:00",
+  "updated_at": "2026-03-23T23:55:57.341320+00:00",
   "summary": {
-    "total_trades": 24,
-    "wins": 21,
+    "total_trades": 25,
+    "wins": 22,
     "losses": 3,
-    "win_rate": 87.5,
-    "total_pnl": -1142.43,
-    "total_staked": 23022.43,
-    "roi": -5.0
+    "win_rate": 88.0,
+    "total_pnl": -1129.78,
+    "total_staked": 24022.43,
+    "roi": -4.7
   },
-  "open_positions": [
-    {
-      "event": "Estudiantes de La Plata vs. CA Central C\u00f3rdoba",
-      "side": "YES",
-      "market": "Will Estudiantes de La Plata win on 2026-03-23?",
-      "stake": 1000,
-      "entry_price": 0.9875,
-      "edge_pct": 1.1765359220817673,
-      "score_at_entry": "3-0",
-      "minute": 83,
-      "profit_if_win": 12.65,
-      "loss_if_lose": 999.35
-    }
-  ],
+  "open_positions": [],
   "scheduled_bets": [
     {
       "event": "VfL Wolfsburg vs. OL Lyonnes",
@@ -35,12 +22,6 @@
     }
   ],
   "todays_schedule": [
-    {
-      "title": "Estudiantes de La Plata vs. CA Central C\u00f3rdoba",
-      "status": "live",
-      "score": "4-0",
-      "minute": "90"
-    },
     {
       "title": "CA Hurac\u00e1n vs. CA Barracas Central",
       "status": "upcoming",
@@ -446,6 +427,22 @@
       "score_at_entry": "1-0",
       "final_score": "1-1",
       "minute": 81
+    },
+    {
+      "timestamp": "2026-03-23T23:52:34.689071+00:00",
+      "event": "Estudiantes de La Plata vs. CA Central C\u00f3rdoba",
+      "pnl": 12.65,
+      "cumulative": -1129.78,
+      "outcome": "WIN",
+      "side": "YES",
+      "market": "Will Estudiantes de La Plata win on 2026-03-23?",
+      "edge_pct": 1.2,
+      "stake": 1000,
+      "league": "Argentina Primera Divisi\u00f3n",
+      "trade_type": "STANDARD",
+      "score_at_entry": "3-0",
+      "final_score": "5-0",
+      "minute": 83
     }
   ],
   "by_league": {
@@ -493,6 +490,11 @@
       "trades": 1,
       "wins": 1,
       "pnl": 14.7
+    },
+    "Argentina Primera Divisi\u00f3n": {
+      "trades": 1,
+      "wins": 1,
+      "pnl": 12.65
     }
   },
   "by_day": {
@@ -507,9 +509,9 @@
       "pnl": -1647.4
     },
     "2026-03-23": {
-      "trades": 2,
-      "wins": 2,
-      "pnl": 49.89
+      "trades": 3,
+      "wins": 3,
+      "pnl": 62.54
     }
   }
 }
