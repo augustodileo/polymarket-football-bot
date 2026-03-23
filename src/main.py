@@ -84,7 +84,6 @@ _session_trades: int = 0
 
 # Today's schedule (updated each poll cycle, persisted for dashboard)
 _todays_schedule: list[str] = []
-_upcoming_schedule: list[str] = []
 
 
 # ── State Persistence ──────────────────────────────────────
@@ -120,7 +119,6 @@ def save_state():
         "open_positions": {str(k): v for k, v in _open_positions.items()},
         "scheduled_bets": scheduled,
         "todays_schedule": _todays_schedule,
-        "upcoming_schedule": _upcoming_schedule,
         "cumulative_pnl": _session_pnl,
         "cumulative_wins": _session_wins,
         "cumulative_losses": _session_losses,
@@ -1379,13 +1377,10 @@ def run_loop(config: dict, mode: str):
                          f"{_session_wins}W-{_session_losses}L | "
                          f"Available: ${effective_bankroll:,.0f}{wallet_str}")
 
-            # ── Schedule: today's matches, upcoming matches, scheduled bets ──
+            # ── Schedule: next 24h matches + scheduled bets ──
             now_utc = datetime.now(timezone.utc)
-            today_date = now_utc.date()
 
-            # Collect matches: next 24h = "today", 24-48h = "upcoming"
             todays_matches = []
-            upcoming_matches = []
             for ev, _lk, _lc in events:
                 st = ev.start_time
                 if st is None:
@@ -1400,26 +1395,17 @@ def run_loop(config: dict, mode: str):
 
                 title = ev.title or "?"
                 hours_until = (st - now_utc).total_seconds() / 3600
-                in_24h = hours_until <= 24
 
                 if ev.live:
                     score = ev.score or "?"
                     minute = ev.elapsed or "?"
                     todays_matches.append(f"{title} [{score} min {minute}]")
-                elif in_24h and (ev.period in ("FT", "POST", "VFT") or ev.ended):
-                    todays_matches.append(f"{title} [ENDED {ev.score or ''}]")
-                elif in_24h and hours_until > 0:
+                elif 0 < hours_until <= 24:
                     todays_matches.append(f"{title} [KO {st.strftime('%H:%M')} UTC]")
-                elif 24 < hours_until <= 48:
-                    upcoming_matches.append((hours_until, f"{title} [KO {st.strftime('%b %d %H:%M')} UTC]"))
-
-            upcoming_matches.sort()
 
             # Persist for dashboard
             _todays_schedule.clear()
             _todays_schedule.extend(todays_matches)
-            _upcoming_schedule.clear()
-            _upcoming_schedule.extend(m for _, m in upcoming_matches[:10])
 
             if todays_matches:
                 log.info(f"  NEXT 24H ({len(todays_matches)} matches):")
@@ -1427,11 +1413,6 @@ def run_loop(config: dict, mode: str):
                     log.info(f"    {m}")
             else:
                 log.info("  NEXT 24H: no matches")
-
-            if upcoming_matches:
-                log.info(f"  UPCOMING ({len(upcoming_matches)} in next 48h):")
-                for h, m in upcoming_matches[:10]:
-                    log.info(f"    {m} ({h:.0f}h)")
 
             if _pre_match_scheduled:
                 log.info(f"  PRE-MATCH BETS ({len(_pre_match_scheduled)}):")
