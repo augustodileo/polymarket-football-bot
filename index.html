@@ -135,11 +135,6 @@
             <ul id="todayList" style="list-style:none;padding:0"></ul>
         </div>
 
-        <div class="open-positions" id="upcomingSection" style="display:none">
-            <h2>Upcoming (48h)</h2>
-            <ul id="upcomingList" style="list-style:none;padding:0"></ul>
-        </div>
-
         <div class="open-positions" id="schedSection" style="display:none">
             <h2>Scheduled Pre-Match Bets</h2>
             <div class="table-wrap">
@@ -384,15 +379,6 @@
                 document.getElementById('todaySection').style.display = 'block';
                 document.getElementById('todayHeader').textContent = "Next 24h";
                 document.getElementById('todayList').innerHTML = '<li style="color:#8b949e;padding:4px 0">No matches in the next 24 hours</li>';
-            }
-
-            // Upcoming matches (48h)
-            var upcomingList = allData.upcoming_schedule || [];
-            if (upcomingList.length > 0) {
-                document.getElementById('upcomingSection').style.display = 'block';
-                document.getElementById('upcomingList').innerHTML = upcomingList.map(function(m) {
-                    return '<li style="padding:4px 0;border-bottom:1px solid #21262d;font-size:14px">' + m + '</li>';
-                }).join('');
             }
 
             // Scheduled pre-match bets
