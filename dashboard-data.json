@@ -1,6 +1,6 @@
 {
   "version": "v1.6.4",
-  "updated_at": "2026-03-23T21:36:09.323814+00:00",
+  "updated_at": "2026-03-23T21:46:13.830937+00:00",
   "summary": {
     "total_trades": 24,
     "wins": 21,
@@ -50,11 +50,6 @@
     "VfL Wolfsburg vs. OL Lyonnes [KO 17:45 UTC]",
     "Jaguares de C\u00f3rdoba FC vs. \u00c1guilas Doradas Rionegro [KO 23:20 UTC]",
     "CDP Junior FC vs. CA Bucaramanga [KO 01:30 UTC]"
-  ],
-  "upcoming_schedule": [
-    "Fortaleza CEIF vs. AD Pasto [KO Mar 25 01:00 UTC]",
-    "Real Madrid CF Femenino vs. FC Barcelona [KO Mar 25 17:45 UTC]",
-    "Manchester United WFC vs. FC Bayern M\u00fcnchen [KO Mar 25 20:00 UTC]"
   ],
   "pnl_curve": [
     {
