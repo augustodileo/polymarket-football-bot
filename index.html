@@ -419,7 +419,7 @@
             const outcome = document.getElementById('filterOutcome').value;
             const date = document.getElementById('filterDate').value;
 
-            let trades = allData.pnl_curve;
+            let trades = allData.pnl_curve.slice().reverse();
             if (league) trades = trades.filter(t => t.league === league);
             if (outcome) trades = trades.filter(t => t.outcome === outcome);
             if (date) trades = trades.filter(t => (t.timestamp || '').startsWith(date));
