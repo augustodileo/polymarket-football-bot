@@ -835,6 +835,7 @@ def _scan_pre_match_mismatches(
 
     min_edge = tier_mismatch_cfg.get("pre_match_min_edge_pct", 2.0)
     bet_minutes_before = tier_mismatch_cfg.get("pre_match_bet_minutes_before", 30)
+    lookahead_hours = tier_mismatch_cfg.get("pre_match_lookahead_hours", 48)
     now = datetime.now(timezone.utc)
 
     # ── Phase 1: SCAN and schedule new mismatches ──
@@ -861,6 +862,12 @@ def _scan_pre_match_mismatches(
         bet_at_time = start_time - __import__("datetime").timedelta(minutes=bet_minutes_before)
         hours_until = (start_time - now).total_seconds() / 3600
         if bet_at_time < now:
+            continue
+
+        # Only schedule matches within the lookahead window — prices change,
+        # so scheduling weeks in advance would use stale mismatch data.
+        # The scan runs every cycle, so matches will be caught as they approach.
+        if hours_until > lookahead_hours:
             continue
 
         home_team, away_team = parse_teams_from_title(event.title or "")
@@ -1087,7 +1094,8 @@ def run_loop(config: dict, mode: str):
     log.info(f"Monitoring {len(leagues)} leagues | Trade from minute {min_minute}+")
     if tier_mismatch_cfg.get("enabled"):
         mins = tier_mismatch_cfg.get("pre_match_bet_minutes_before", 30)
-        log.info(f"Tier mismatch: ON (pre-match only) | Favorite >= {tier_mismatch_cfg['min_favorite_prob']:.0%} | Bet {mins}min before kickoff")
+        lookahead = tier_mismatch_cfg.get("pre_match_lookahead_hours", 48)
+        log.info(f"Tier mismatch: ON (pre-match only) | Favorite >= {tier_mismatch_cfg['min_favorite_prob']:.0%} | Bet {mins}min before kickoff | Lookahead {lookahead}h")
     log.info(f"Risk: max_stake=${risk['max_single_stake']} | min_edge={risk['min_edge_pct']}% | kelly={risk['kelly_fraction']*100:.0f}%")
     log.info(f"Auto-redeem: {'ON' if auto_redeem else 'OFF'}")
 

@@ -745,3 +745,39 @@ class TestMainGaps:
 
         assert 777 in M._pre_match_scheduled
         M._pre_match_scheduled = {}
+
+    def test_pre_match_lookahead_skips_distant_matches(self):
+        """Matches beyond pre_match_lookahead_hours should not be scheduled."""
+        M._evaluated_event_ids = set()
+        M._open_positions = {}
+        M._pre_match_scheduled = {}
+
+        now = datetime.now(timezone.utc)
+        # Match 10 days from now — way beyond 48h default lookahead
+        kickoff = now + timedelta(days=10)
+
+        m_home = _make_market_mock("Will Strong win?", prices=[0.78, 0.22])
+        m_draw = _make_market_mock("Will draw?", prices=[0.12, 0.88])
+        m_away = _make_market_mock("Will Weak win?", prices=[0.10, 0.90])
+
+        ev = MagicMock()
+        ev.id = 888
+        ev.title = "Strong vs. Weak"
+        ev.live = False
+        ev.ended = False
+        ev.start_time = kickoff
+        ev.markets = [m_home, m_draw, m_away]
+
+        events = [(ev, "test", {"name": "Test"})]
+        _scan_pre_match_mismatches(events, {},
+                                   {"enabled": True, "min_favorite_prob": 0.70,
+                                    "max_underdog_prob": 0.15, "pre_match": True,
+                                    "pre_match_bet_minutes_before": 30,
+                                    "pre_match_lookahead_hours": 48,
+                                    "pre_match_min_edge_pct": 0},
+                                   {"max_concurrent_positions": 5, "kelly_fraction": 0.25,
+                                    "max_single_stake": 1000},
+                                   10000, None, MagicMock(), "paper")
+
+        assert 888 not in M._pre_match_scheduled
+        M._pre_match_scheduled = {}
