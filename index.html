@@ -95,7 +95,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>PolyBot Dashboard</h1>
+        <h1>PolyBot Dashboard <span id="version" style="font-size:0.5em;color:#484f58;font-weight:normal"></span></h1>
         <p class="subtitle">Polymarket Football Trading Bot</p>
         <p class="updated" id="updated"></p>
 
@@ -128,6 +128,16 @@
                     <tbody></tbody>
                 </table>
             </div>
+        </div>
+
+        <div class="open-positions" id="todaySection" style="display:none">
+            <h2 id="todayHeader">Today's Matches</h2>
+            <ul id="todayList" style="list-style:none;padding:0"></ul>
+        </div>
+
+        <div class="open-positions" id="upcomingSection" style="display:none">
+            <h2>Upcoming (48h)</h2>
+            <ul id="upcomingList" style="list-style:none;padding:0"></ul>
         </div>
 
         <div class="open-positions" id="schedSection" style="display:none">
@@ -209,6 +219,7 @@
             document.getElementById('trades').textContent = s.total_trades;
             document.getElementById('open').textContent = allData.open_positions.length;
             document.getElementById('updated').textContent = 'Updated: ' + new Date(allData.updated_at).toLocaleString();
+            if (allData.version) document.getElementById('version').textContent = allData.version;
 
             // Responsive chart defaults
             const isMobile = window.innerWidth < 500;
@@ -359,6 +370,29 @@
                         <td class="win">+$${(p.profit_if_win || 0).toFixed(0)}</td>
                     </tr>
                 `).join('');
+            }
+
+            // Today's matches
+            var todayList = allData.todays_schedule || [];
+            if (todayList.length > 0) {
+                document.getElementById('todaySection').style.display = 'block';
+                document.getElementById('todayHeader').textContent = "Today's Matches (" + todayList.length + ")";
+                document.getElementById('todayList').innerHTML = todayList.map(function(m) {
+                    return '<li style="padding:4px 0;border-bottom:1px solid #21262d;font-size:14px">' + m + '</li>';
+                }).join('');
+            } else {
+                document.getElementById('todaySection').style.display = 'block';
+                document.getElementById('todayHeader').textContent = "Today's Matches";
+                document.getElementById('todayList').innerHTML = '<li style="color:#8b949e;padding:4px 0">No matches today</li>';
+            }
+
+            // Upcoming matches (48h)
+            var upcomingList = allData.upcoming_schedule || [];
+            if (upcomingList.length > 0) {
+                document.getElementById('upcomingSection').style.display = 'block';
+                document.getElementById('upcomingList').innerHTML = upcomingList.map(function(m) {
+                    return '<li style="padding:4px 0;border-bottom:1px solid #21262d;font-size:14px">' + m + '</li>';
+                }).join('');
             }
 
             // Scheduled pre-match bets
