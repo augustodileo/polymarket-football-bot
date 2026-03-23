@@ -1,28 +1,15 @@
 {
-  "updated_at": "2026-03-23T01:16:33.942335+00:00",
+  "updated_at": "2026-03-23T01:21:34.494401+00:00",
   "summary": {
-    "total_trades": 22,
-    "wins": 19,
+    "total_trades": 23,
+    "wins": 20,
     "losses": 3,
-    "win_rate": 86.4,
-    "total_pnl": -1192.32,
-    "total_staked": 21022.43,
-    "roi": -5.7
+    "win_rate": 87.0,
+    "total_pnl": -1157.13,
+    "total_staked": 22022.43,
+    "roi": -5.3
   },
-  "open_positions": [
-    {
-      "event": "San Diego FC vs. Real Salt Lake",
-      "side": "NO",
-      "market": "Will Real Salt Lake win on 2026-03-22?",
-      "stake": 1000,
-      "entry_price": 0.966,
-      "edge_pct": 3.2635338162629757,
-      "score_at_entry": "2-1",
-      "minute": 82,
-      "profit_if_win": 35.19,
-      "loss_if_lose": 999.81
-    }
-  ],
+  "open_positions": [],
   "scheduled_bets": [
     {
       "event": "SC Freiburg vs. FC Bayern M\u00fcnchen",
@@ -425,6 +412,22 @@
       "score_at_entry": "1-1",
       "final_score": "1-1",
       "minute": 80
+    },
+    {
+      "timestamp": "2026-03-23T01:17:02.704924+00:00",
+      "event": "San Diego FC vs. Real Salt Lake",
+      "pnl": 35.19,
+      "cumulative": -1157.13,
+      "outcome": "WIN",
+      "side": "NO",
+      "market": "Will Real Salt Lake win on 2026-03-22?",
+      "edge_pct": 3.3,
+      "stake": 1000,
+      "league": "MLS",
+      "trade_type": "STANDARD",
+      "score_at_entry": "2-1",
+      "final_score": "2-2",
+      "minute": 82
     }
   ],
   "by_league": {
@@ -449,9 +452,9 @@
       "pnl": 176.95
     },
     "MLS": {
-      "trades": 8,
-      "wins": 7,
-      "pnl": -332.12
+      "trades": 9,
+      "wins": 8,
+      "pnl": -296.93
     },
     "Eredivisie": {
       "trades": 3,
@@ -479,6 +482,11 @@
       "trades": 18,
       "wins": 15,
       "pnl": -1647.4
+    },
+    "2026-03-23": {
+      "trades": 1,
+      "wins": 1,
+      "pnl": 35.19
     }
   }
 }
