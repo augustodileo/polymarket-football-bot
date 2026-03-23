@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-03-23T19:54:46.373804+00:00",
+  "updated_at": "2026-03-23T19:59:48.442087+00:00",
   "summary": {
     "total_trades": 23,
     "wins": 20,
@@ -10,7 +10,24 @@
     "roi": -5.3
   },
   "open_positions": [],
-  "scheduled_bets": [],
+  "scheduled_bets": [
+    {
+      "event": "VfL Wolfsburg vs. OL Lyonnes",
+      "fav_team": "OL Lyonnes",
+      "underdog_team": "VfL Wolfsburg",
+      "fav_prob": 0.7,
+      "kickoff": "2026-03-24T17:45:00+00:00",
+      "bet_at": "2026-03-24T17:15:00+00:00"
+    },
+    {
+      "event": "Real Madrid CF Femenino vs. FC Barcelona",
+      "fav_team": "FC Barcelona",
+      "underdog_team": "Real Madrid CF Femenino",
+      "fav_prob": 0.815,
+      "kickoff": "2026-03-25T17:45:00+00:00",
+      "bet_at": "2026-03-25T17:15:00+00:00"
+    }
+  ],
   "pnl_curve": [
     {
       "timestamp": "2026-03-21T21:44:26.791886+00:00",
