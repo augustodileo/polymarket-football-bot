@@ -55,14 +55,14 @@ jobs:
 
             echo ""
             echo "=== Smoke Test ==="
-            STATUS=$(sudo docker inspect poly-bot --format '{{.State.Status}}' 2>/dev/null)
+            STATUS=$(sudo docker inspect polymarket-football-bot --format '{{.State.Status}}' 2>/dev/null)
             if [ "$STATUS" != "running" ]; then
               echo "FAIL: poly-bot is $STATUS"
               exit 1
             fi
-            echo "poly-bot: running"
-            DASH=$(sudo docker inspect poly-dash --format '{{.State.Status}}' 2>/dev/null || echo "not found")
-            echo "poly-dash: $DASH"
+            echo "polymarket-football-bot: running"
+            DASH=$(sudo docker inspect polymarket-football-dash --format '{{.State.Status}}' 2>/dev/null || echo "not found")
+            echo "polymarket-football-dash: $DASH"
             echo "SMOKE TEST PASSED"
         env:
           BOT_MODE: ${{ vars.BOT_MODE }}

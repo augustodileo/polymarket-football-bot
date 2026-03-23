@@ -4,8 +4,8 @@ services:
       context: .
       args:
         VERSION: ${VERSION:-dev}
-    image: poly-bot:${VERSION:-latest}
-    container_name: poly-bot
+    image: polymarket-football-bot:${VERSION:-latest}
+    container_name: polymarket-football-bot
     restart: always
     volumes:
       - ./config.yaml:/app/config.yaml:ro
@@ -15,7 +15,7 @@ services:
   dashboard:
     build:
       context: ./dashboard
-    container_name: poly-dash
+    container_name: polymarket-football-dash
     restart: always
     volumes:
       - ./data:/app/data:ro

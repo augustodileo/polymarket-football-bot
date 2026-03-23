@@ -31,9 +31,9 @@ export GITHUB_TOKEN="${GITHUB_TOKEN:-}"
 export GITHUB_REPO="${GITHUB_REPO:-}"
 export PUSH_INTERVAL_SEC="${PUSH_INTERVAL_SEC:-300}"
 
-# Stop and remove any old standalone containers (from pre-compose setup)
-sudo docker stop poly-bot poly-dash 2>/dev/null || true
-sudo docker rm poly-bot poly-dash 2>/dev/null || true
+# Stop and remove any old containers (legacy names or current)
+sudo docker stop poly-bot poly-dash polymarket-football-bot polymarket-football-dash 2>/dev/null || true
+sudo docker rm poly-bot poly-dash polymarket-football-bot polymarket-football-dash 2>/dev/null || true
 
 # Build and restart both containers via compose
 sudo -E docker compose build
@@ -42,9 +42,9 @@ sudo -E docker compose up -d
 
 sleep 5
 echo "=== Bot logs ==="
-sudo docker logs --tail 10 poly-bot
+sudo docker logs --tail 10 polymarket-football-bot
 echo ""
 echo "=== Dashboard logs ==="
-sudo docker logs --tail 5 poly-dash
+sudo docker logs --tail 5 polymarket-football-dash
 echo ""
 echo "Deploy complete: $VERSION"

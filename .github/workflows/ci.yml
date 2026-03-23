@@ -40,13 +40,13 @@ jobs:
         run: |
           VERSION=$(git describe --tags --always 2>/dev/null || echo dev)
           echo "VERSION=$VERSION" >> $GITHUB_ENV
-          docker build --build-arg VERSION=$VERSION -t poly-bot:$VERSION .
+          docker build --build-arg VERSION=$VERSION -t polymarket-football-bot:$VERSION .
       - name: Container structure test
         run: |
           curl -LO https://github.com/GoogleContainerTools/container-structure-test/releases/latest/download/container-structure-test-linux-amd64
           chmod +x container-structure-test-linux-amd64
           sudo mv container-structure-test-linux-amd64 /usr/local/bin/container-structure-test
-          container-structure-test test --image poly-bot:${{ env.VERSION }} --config container-structure-test.yaml
+          container-structure-test test --image polymarket-football-bot:${{ env.VERSION }} --config container-structure-test.yaml
 
   dashboard:
     runs-on: ubuntu-latest

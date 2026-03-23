@@ -31,6 +31,13 @@ __version__ = _VERSION_FILE.read_text().strip() if _VERSION_FILE.exists() else "
 
 import yaml
 from polymarket_apis import PolymarketGammaClient, PolymarketClobClient, PolymarketReadOnlyClobClient
+from polymarket_apis.types.gamma_types import Event as _GammaEvent
+
+# Polymarket API now returns openInterest as float; upstream package expects int.
+# Monkey-patch the field type to avoid Pydantic validation errors.
+_GammaEvent.model_fields["open_interest"].annotation = float | None
+_GammaEvent.__pydantic_complete__ = False
+_GammaEvent.model_rebuild(force=True)
 
 from engine import TradeSignal, evaluate
 
