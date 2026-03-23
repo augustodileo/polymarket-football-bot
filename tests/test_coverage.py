@@ -367,10 +367,8 @@ class TestScanPreMatchMismatches:
     def test_schedules_upcoming_mismatch(self):
         now = datetime.now(timezone.utc)
         # Kickoff must be same UTC date as "now" and bet_at must be in the future
-        kickoff = now + timedelta(minutes=45)
+        kickoff = now.replace(hour=min(now.hour + 1, 23), minute=30)
         # If that crosses midnight, pull back
-        if kickoff.date() != now.date():
-            kickoff = now + timedelta(minutes=5)
 
         m_home = _make_market_mock("Will Strong win?", prices=[0.75, 0.25])
         m_draw = _make_market_mock("Will draw?", prices=[0.15, 0.85])
@@ -385,13 +383,13 @@ class TestScanPreMatchMismatches:
         ev.markets = [m_home, m_draw, m_away]
 
         config = {"odds_api_key": ""}
-        tm_cfg = {"enabled": True, "min_favorite_prob": 0.65,
-                  "pre_match": True, "pre_match_bet_minutes_before": 30,
-                  "pre_match_min_edge_pct": 2.0}
+        tm_cfg = {"enabled": True, "min_favorite_prob": 0.65, "max_underdog_prob": 0.15,
+                  "pre_match": True, "pre_match_bet_minutes_before": 0,
+                  "pre_match_min_edge_pct": 0}
         risk = {"max_concurrent_positions": 5, "kelly_fraction": 0.25,
                 "max_single_stake": 1000}
 
-        events = [(ev, "test", {"api_football_id": 0, "name": "Test"})]
+        events = [(ev, "test", {"name": "Test"})]
         _scan_pre_match_mismatches(events, config, tm_cfg, risk, 10000, None, MagicMock(), "paper")
 
         assert 500 in M._pre_match_scheduled
@@ -721,9 +719,7 @@ class TestMainGaps:
 
         now = datetime.now(timezone.utc)
         from datetime import timedelta
-        kickoff = now + timedelta(minutes=45)
-        if kickoff.date() != now.date():
-            kickoff = now + timedelta(minutes=5)
+        kickoff = now.replace(hour=min(now.hour + 1, 23), minute=30)
 
         m_home = _make_market_mock("Will Strong win?", prices=[0.78, 0.22])
         m_draw = _make_market_mock("Will draw?", prices=[0.12, 0.88])
@@ -741,7 +737,7 @@ class TestMainGaps:
         _scan_pre_match_mismatches(events, {},
                                    {"enabled": True, "min_favorite_prob": 0.70,
                                     "max_underdog_prob": 0.15, "pre_match": True,
-                                    "pre_match_bet_minutes_before": 30,
+                                    "pre_match_bet_minutes_before": 0,
                                     "pre_match_min_edge_pct": 0},
                                    {"max_concurrent_positions": 5, "kelly_fraction": 0.25,
                                     "max_single_stake": 1000},

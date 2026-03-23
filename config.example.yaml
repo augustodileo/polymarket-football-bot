@@ -33,7 +33,8 @@ tier_mismatch:
   max_underdog_prob: 0.15
   pre_match: true
   pre_match_bet_minutes_before: 30
-  pre_match_min_edge_pct: 2.0
+  pre_match_min_edge_pct: 0
+  pre_match_kelly_fraction: 0.50    # higher Kelly for safer pre-match bets (default 25%)
 
 # --- Auto Redemption ---
 auto_redeem: true
