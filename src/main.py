@@ -225,7 +225,7 @@ def discover_football_events(gamma: PolymarketGammaClient, leagues: dict) -> lis
 
     # Pass 2: global football tag — catches Korean league, cups, etc.
     try:
-        global_events = gamma.get_events(tag_id=GLOBAL_FOOTBALL_TAG, active=True, closed=False, limit=100)
+        global_events = gamma.get_events(tag_id=GLOBAL_FOOTBALL_TAG, active=True, closed=False, limit=500)
         new_count = 0
         for e in global_events:
             if e.id in seen_ids:

@@ -72,3 +72,36 @@ leagues:
   liga_portugal:
     polymarket_tag: 101772
     name: "Liga Portugal"
+  argentina_primera:
+    polymarket_tag: 102561
+    name: "Argentina Primera División"
+  colombia_primera:
+    polymarket_tag: 102648
+    name: "Colombia Primera A"
+  liga_mx:
+    polymarket_tag: 102448
+    name: "Liga MX"
+  la_liga_2:
+    polymarket_tag: 102866
+    name: "La Liga 2"
+  serie_b:
+    polymarket_tag: 102870
+    name: "Serie B"
+  super_lig:
+    polymarket_tag: 102564
+    name: "Süper Lig"
+  saudi_pro:
+    polymarket_tag: 102650
+    name: "Saudi Pro League"
+  efl_championship:
+    polymarket_tag: 102643
+    name: "EFL Championship"
+  brazil_serie_a:
+    polymarket_tag: 102648
+    name: "Brazil Serie A"
+  k_league:
+    polymarket_tag: 102771
+    name: "K-League"
+  j_league:
+    polymarket_tag: 102649
+    name: "J-League"
