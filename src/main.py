@@ -1372,11 +1372,58 @@ def run_loop(config: dict, mode: str):
                          f"{_session_wins}W-{_session_losses}L | "
                          f"Available: ${effective_bankroll:,.0f}{wallet_str}")
 
-            # Print scheduled pre-match bets
+            # ── Schedule: today's matches, upcoming matches, scheduled bets ──
+            now_utc = datetime.now(timezone.utc)
+            today_date = now_utc.date()
+
+            # Collect today's matches and upcoming matches (next 48h)
+            todays_matches = []
+            upcoming_matches = []
+            for ev, _lk, _lc in events:
+                st = ev.start_time
+                if st is None:
+                    continue
+                if isinstance(st, str):
+                    try:
+                        st = datetime.fromisoformat(st)
+                    except ValueError:
+                        continue
+                if st.tzinfo is None:
+                    st = st.replace(tzinfo=timezone.utc)
+
+                title = ev.title or "?"
+                if ev.live:
+                    score = ev.score or "?"
+                    minute = ev.elapsed or "?"
+                    todays_matches.append(f"{title} [{score} min {minute}]")
+                elif ev.period in ("FT", "POST", "VFT") or ev.ended:
+                    todays_matches.append(f"{title} [ENDED {ev.score or ''}]")
+                elif st.date() == today_date:
+                    todays_matches.append(f"{title} [KO {st.strftime('%H:%M')} UTC]")
+                else:
+                    hours_until = (st - now_utc).total_seconds() / 3600
+                    if 0 < hours_until <= 48:
+                        upcoming_matches.append((hours_until, f"{title} [KO {st.strftime('%b %d %H:%M')} UTC]"))
+
+            upcoming_matches.sort()
+
+            if todays_matches:
+                log.info(f"  TODAY ({len(todays_matches)} matches):")
+                for m in todays_matches:
+                    log.info(f"    {m}")
+            else:
+                log.info("  TODAY: no matches")
+
+            if upcoming_matches:
+                log.info(f"  UPCOMING ({len(upcoming_matches)} in next 48h):")
+                for h, m in upcoming_matches[:10]:
+                    log.info(f"    {m} ({h:.0f}h)")
+
             if _pre_match_scheduled:
+                log.info(f"  PRE-MATCH BETS ({len(_pre_match_scheduled)}):")
                 for eid, sched in _pre_match_scheduled.items():
-                    mins_until_bet = max(0, (sched["bet_at"] - datetime.now(timezone.utc)).total_seconds() / 60)
-                    log.info(f"  SCHED: {sched['event_title']} | {sched['fav_team']} {sched['fav_prob']:.0%} fav | "
+                    mins_until_bet = max(0, (sched["bet_at"] - now_utc).total_seconds() / 60)
+                    log.info(f"    {sched['event_title']} | {sched['fav_team']} {sched['fav_prob']:.0%} fav | "
                              f"Bet in {mins_until_bet:.0f}min")
 
         except KeyboardInterrupt:
