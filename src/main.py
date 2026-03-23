@@ -1392,13 +1392,15 @@ def run_loop(config: dict, mode: str):
                     st = st.replace(tzinfo=timezone.utc)
 
                 title = ev.title or "?"
+                is_today = st.date() == today_date
+
                 if ev.live:
                     score = ev.score or "?"
                     minute = ev.elapsed or "?"
                     todays_matches.append(f"{title} [{score} min {minute}]")
-                elif ev.period in ("FT", "POST", "VFT") or ev.ended:
+                elif is_today and (ev.period in ("FT", "POST", "VFT") or ev.ended):
                     todays_matches.append(f"{title} [ENDED {ev.score or ''}]")
-                elif st.date() == today_date:
+                elif is_today:
                     todays_matches.append(f"{title} [KO {st.strftime('%H:%M')} UTC]")
                 else:
                     hours_until = (st - now_utc).total_seconds() / 3600
