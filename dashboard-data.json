@@ -1,30 +1,26 @@
 {
   "version": "v1.6.4",
-  "updated_at": "2026-03-23T21:26:08.012818+00:00",
+  "updated_at": "2026-03-23T21:31:08.744256+00:00",
   "summary": {
-    "total_trades": 23,
-    "wins": 20,
+    "total_trades": 24,
+    "wins": 21,
     "losses": 3,
-    "win_rate": 87.0,
-    "total_pnl": -1157.13,
-    "total_staked": 22022.43,
-    "roi": -5.3
+    "win_rate": 87.5,
+    "total_pnl": -1142.43,
+    "total_staked": 23022.43,
+    "roi": -5.0
   },
-  "open_positions": [
+  "open_positions": [],
+  "scheduled_bets": [
     {
-      "event": "CD Castell\u00f3n vs. Cultural y Deportiva Leonesa",
-      "side": "NO",
-      "market": "Will Cultural y Deportiva Leonesa win on 2026-03-23?",
-      "stake": 1000,
-      "entry_price": 0.9855,
-      "edge_pct": 1.3934398236524315,
-      "score_at_entry": "1-0",
-      "minute": 81,
-      "profit_if_win": 14.7,
-      "loss_if_lose": 999.3
+      "event": "VfL Wolfsburg vs. OL Lyonnes",
+      "fav_team": "OL Lyonnes",
+      "underdog_team": "VfL Wolfsburg",
+      "fav_prob": 0.7,
+      "kickoff": "2026-03-24T17:45:00+00:00",
+      "bet_at": "2026-03-24T17:15:00+00:00"
     }
   ],
-  "scheduled_bets": [],
   "todays_schedule": [
     "Manchester City FC vs. Crystal Palace FC [ENDED 0-0]",
     "Club Atl\u00e9tico de Madrid vs. Club Brugge KV [ENDED 4-1]",
@@ -42,7 +38,7 @@
     "Estudiantes de La Plata vs. CA Central C\u00f3rdoba [KO 22:00 UTC]",
     "CA Hurac\u00e1n vs. CA Barracas Central [KO 00:15 UTC]",
     "Quer\u00e9taro FC vs. FC Ju\u00e1rez [ENDED 0-0]",
-    "CD Castell\u00f3n vs. Cultural y Deportiva Leonesa [1-1 min 90]",
+    "CD Castell\u00f3n vs. Cultural y Deportiva Leonesa [ENDED 1-1]",
     "US Catanzaro 1929 vs. Modena FC 2018 [ENDED 0-0]",
     "G\u00f6ztepe SK vs. \u00c7aykur Rizespor [ENDED 3-1]",
     "Portsmouth FC vs. Ipswich Town FC [ENDED 0-0]",
@@ -428,6 +424,22 @@
       "score_at_entry": "2-1",
       "final_score": "2-2",
       "minute": 82
+    },
+    {
+      "timestamp": "2026-03-23T21:27:59.322481+00:00",
+      "event": "CD Castell\u00f3n vs. Cultural y Deportiva Leonesa",
+      "pnl": 14.7,
+      "cumulative": -1142.43,
+      "outcome": "WIN",
+      "side": "NO",
+      "market": "Will Cultural y Deportiva Leonesa win on 2026-03-23?",
+      "edge_pct": 1.4,
+      "stake": 1000,
+      "league": "La Liga 2",
+      "trade_type": "STANDARD",
+      "score_at_entry": "1-0",
+      "final_score": "1-1",
+      "minute": 81
     }
   ],
   "by_league": {
@@ -470,6 +482,11 @@
       "trades": 1,
       "wins": 1,
       "pnl": 242.19
+    },
+    "La Liga 2": {
+      "trades": 1,
+      "wins": 1,
+      "pnl": 14.7
     }
   },
   "by_day": {
@@ -484,9 +501,9 @@
       "pnl": -1647.4
     },
     "2026-03-23": {
-      "trades": 1,
-      "wins": 1,
-      "pnl": 35.19
+      "trades": 2,
+      "wins": 2,
+      "pnl": 49.89
     }
   }
 }
