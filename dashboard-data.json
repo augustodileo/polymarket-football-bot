@@ -1,6 +1,6 @@
 {
-  "version": "v1.6.7",
-  "updated_at": "2026-03-23T23:20:50.451588+00:00",
+  "version": "v1.6.8",
+  "updated_at": "2026-03-23T23:25:52.852867+00:00",
   "summary": {
     "total_trades": 24,
     "wins": 21,
@@ -26,7 +26,7 @@
       "title": "Estudiantes de La Plata vs. CA Central C\u00f3rdoba",
       "status": "live",
       "score": "1-0",
-      "minute": "51"
+      "minute": "66"
     },
     {
       "title": "CA Hurac\u00e1n vs. CA Barracas Central",
@@ -42,11 +42,6 @@
       "title": "VfL Wolfsburg vs. OL Lyonnes",
       "status": "upcoming",
       "kickoff": "2026-03-24T17:45:00+00:00"
-    },
-    {
-      "title": "Jaguares de C\u00f3rdoba FC vs. \u00c1guilas Doradas Rionegro",
-      "status": "upcoming",
-      "kickoff": "2026-03-23T23:20:00+00:00"
     },
     {
       "title": "CDP Junior FC vs. CA Bucaramanga",
