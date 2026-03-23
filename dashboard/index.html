@@ -131,7 +131,7 @@
         </div>
 
         <div class="open-positions" id="todaySection" style="display:none">
-            <h2 id="todayHeader">Today's Matches</h2>
+            <h2 id="todayHeader">Next 24h</h2>
             <ul id="todayList" style="list-style:none;padding:0"></ul>
         </div>
 
@@ -376,14 +376,14 @@
             var todayList = allData.todays_schedule || [];
             if (todayList.length > 0) {
                 document.getElementById('todaySection').style.display = 'block';
-                document.getElementById('todayHeader').textContent = "Today's Matches (" + todayList.length + ")";
+                document.getElementById('todayHeader').textContent = "Next 24h (" + todayList.length + " matches)";
                 document.getElementById('todayList').innerHTML = todayList.map(function(m) {
                     return '<li style="padding:4px 0;border-bottom:1px solid #21262d;font-size:14px">' + m + '</li>';
                 }).join('');
             } else {
                 document.getElementById('todaySection').style.display = 'block';
-                document.getElementById('todayHeader').textContent = "Today's Matches";
-                document.getElementById('todayList').innerHTML = '<li style="color:#8b949e;padding:4px 0">No matches today</li>';
+                document.getElementById('todayHeader').textContent = "Next 24h";
+                document.getElementById('todayList').innerHTML = '<li style="color:#8b949e;padding:4px 0">No matches in the next 24 hours</li>';
             }
 
             // Upcoming matches (48h)

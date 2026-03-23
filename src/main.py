@@ -842,7 +842,7 @@ def _scan_pre_match_mismatches(
 
     min_edge = tier_mismatch_cfg.get("pre_match_min_edge_pct", 2.0)
     bet_minutes_before = tier_mismatch_cfg.get("pre_match_bet_minutes_before", 30)
-    lookahead_hours = tier_mismatch_cfg.get("pre_match_lookahead_hours", 48)
+    lookahead_hours = tier_mismatch_cfg.get("pre_match_lookahead_hours", 24)
     now = datetime.now(timezone.utc)
 
     # ── Phase 1: SCAN and schedule new mismatches ──
@@ -1383,7 +1383,7 @@ def run_loop(config: dict, mode: str):
             now_utc = datetime.now(timezone.utc)
             today_date = now_utc.date()
 
-            # Collect today's matches and upcoming matches (next 48h)
+            # Collect matches: next 24h = "today", 24-48h = "upcoming"
             todays_matches = []
             upcoming_matches = []
             for ev, _lk, _lc in events:
@@ -1399,20 +1399,19 @@ def run_loop(config: dict, mode: str):
                     st = st.replace(tzinfo=timezone.utc)
 
                 title = ev.title or "?"
-                is_today = st.date() == today_date
+                hours_until = (st - now_utc).total_seconds() / 3600
+                in_24h = hours_until <= 24
 
                 if ev.live:
                     score = ev.score or "?"
                     minute = ev.elapsed or "?"
                     todays_matches.append(f"{title} [{score} min {minute}]")
-                elif is_today and (ev.period in ("FT", "POST", "VFT") or ev.ended):
+                elif in_24h and (ev.period in ("FT", "POST", "VFT") or ev.ended):
                     todays_matches.append(f"{title} [ENDED {ev.score or ''}]")
-                elif is_today:
+                elif in_24h and hours_until > 0:
                     todays_matches.append(f"{title} [KO {st.strftime('%H:%M')} UTC]")
-                else:
-                    hours_until = (st - now_utc).total_seconds() / 3600
-                    if 0 < hours_until <= 48:
-                        upcoming_matches.append((hours_until, f"{title} [KO {st.strftime('%b %d %H:%M')} UTC]"))
+                elif 24 < hours_until <= 48:
+                    upcoming_matches.append((hours_until, f"{title} [KO {st.strftime('%b %d %H:%M')} UTC]"))
 
             upcoming_matches.sort()
 
@@ -1423,11 +1422,11 @@ def run_loop(config: dict, mode: str):
             _upcoming_schedule.extend(m for _, m in upcoming_matches[:10])
 
             if todays_matches:
-                log.info(f"  TODAY ({len(todays_matches)} matches):")
+                log.info(f"  NEXT 24H ({len(todays_matches)} matches):")
                 for m in todays_matches:
                     log.info(f"    {m}")
             else:
-                log.info("  TODAY: no matches")
+                log.info("  NEXT 24H: no matches")
 
             if upcoming_matches:
                 log.info(f"  UPCOMING ({len(upcoming_matches)} in next 48h):")
