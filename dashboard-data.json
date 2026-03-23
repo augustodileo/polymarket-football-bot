@@ -1,6 +1,6 @@
 {
-  "version": "dev",
-  "updated_at": "2026-03-23T20:51:01.385453+00:00",
+  "version": "v1.6.4",
+  "updated_at": "2026-03-23T20:56:03.307313+00:00",
   "summary": {
     "total_trades": 23,
     "wins": 20,
@@ -11,26 +11,43 @@
     "roi": -5.3
   },
   "open_positions": [],
-  "scheduled_bets": [
-    {
-      "event": "VfL Wolfsburg vs. OL Lyonnes",
-      "fav_team": "OL Lyonnes",
-      "underdog_team": "VfL Wolfsburg",
-      "fav_prob": 0.7,
-      "kickoff": "2026-03-24T17:45:00+00:00",
-      "bet_at": "2026-03-24T17:15:00+00:00"
-    },
-    {
-      "event": "Real Madrid CF Femenino vs. FC Barcelona",
-      "fav_team": "FC Barcelona",
-      "underdog_team": "Real Madrid CF Femenino",
-      "fav_prob": 0.815,
-      "kickoff": "2026-03-25T17:45:00+00:00",
-      "bet_at": "2026-03-25T17:15:00+00:00"
-    }
+  "scheduled_bets": [],
+  "todays_schedule": [
+    "Manchester City FC vs. Crystal Palace FC [ENDED 0-0]",
+    "Club Atl\u00e9tico de Madrid vs. Club Brugge KV [ENDED 4-1]",
+    "New England Revolution vs. Houston Dynamo [ENDED 0-0]",
+    "CA Gimnasia y Esgrima de Mendoza vs. CSyD Defensa y Justicia [ENDED 0-0]",
+    "CA Platense vs. Estudiantes de La Plata [ENDED 0-0]",
+    "CA Barracas Central vs. CA Banfield [ENDED 0-0]",
+    "CA V\u00e9lez Sarsfield vs. CA Newell's Old Boys [ENDED 0-0]",
+    "CA Rosario Central vs. CA Tigre [ENDED 0-0]",
+    "CA Uni\u00f3n vs. CA Talleres [ENDED 0-0]",
+    "AA Estudiantes vs. Instituto AC C\u00f3rdoba [ENDED 0-0]",
+    "CA Aldosivi vs. CS Independiente Rivadavia [ENDED 0-0]",
+    "CA San Lorenzo de Almagro vs. CA Independiente [ENDED 0-0]",
+    "CA Tucum\u00e1n vs. Gimnasia y Esgrima de La Plata [ENDED 1-0]",
+    "Estudiantes de La Plata vs. CA Central C\u00f3rdoba [KO 22:00 UTC]",
+    "CA Hurac\u00e1n vs. CA Barracas Central [KO 00:15 UTC]",
+    "Quer\u00e9taro FC vs. FC Ju\u00e1rez [ENDED 0-0]",
+    "CD Castell\u00f3n vs. Cultural y Deportiva Leonesa [1-0 min 65]",
+    "US Catanzaro 1929 vs. Modena FC 2018 [ENDED 0-0]",
+    "G\u00f6ztepe SK vs. \u00c7aykur Rizespor [ENDED 3-1]",
+    "Portsmouth FC vs. Ipswich Town FC [ENDED 0-0]",
+    "Ulsan HD FC vs. FC Seoul [ENDED 0-0]",
+    "Sarpsborg 08 FF vs. FK Bod\u00f8/Glimt [ENDED 0-0]",
+    "Lillestr\u00f8m SK vs. Kristiansund BK [ENDED 0-0]",
+    "FK Bod\u00f8/Glimt vs. Hamarkameratene [ENDED 0-0]",
+    "Arsenal WFC vs. Chelsea FC [KO 20:00 UTC]",
+    "VfL Wolfsburg vs. OL Lyonnes [KO 17:45 UTC]",
+    "Independiente Santa Fe vs. Independiente Medell\u00edn [KO 21:10 UTC]",
+    "Jaguares de C\u00f3rdoba FC vs. \u00c1guilas Doradas Rionegro [KO 23:20 UTC]",
+    "CDP Junior FC vs. CA Bucaramanga [KO 01:30 UTC]"
   ],
-  "todays_schedule": [],
-  "upcoming_schedule": [],
+  "upcoming_schedule": [
+    "Fortaleza CEIF vs. AD Pasto [KO Mar 25 01:00 UTC]",
+    "Real Madrid CF Femenino vs. FC Barcelona [KO Mar 25 17:45 UTC]",
+    "Manchester United WFC vs. FC Bayern M\u00fcnchen [KO Mar 25 20:00 UTC]"
+  ],
   "pnl_curve": [
     {
       "timestamp": "2026-03-21T21:44:26.791886+00:00",
