@@ -850,14 +850,10 @@ def _scan_pre_match_mismatches(
         if start_time.tzinfo is None:
             start_time = start_time.replace(tzinfo=timezone.utc)
 
-        # Skip matches where the bet window already passed, or too far out
+        # Skip matches where the bet window already passed
         bet_at_time = start_time - __import__("datetime").timedelta(minutes=bet_minutes_before)
         hours_until = (start_time - now).total_seconds() / 3600
         if bet_at_time < now:
-            # Bet window already passed — don't schedule
-            continue
-        if hours_until > 8:
-            # Too far out — will be picked up on a later poll cycle
             continue
 
         home_team, away_team = parse_teams_from_title(event.title or "")
