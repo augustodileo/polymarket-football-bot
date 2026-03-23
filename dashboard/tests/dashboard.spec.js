@@ -228,11 +228,11 @@ test('trade history filter by outcome works', async ({ page }) => {
 
 test('updated timestamp is shown', async ({ page }) => {
   await page.goto('/');
-  // Wait for data to load and render
+  // Wait for data to load and render — WebKit on CI can be very slow
   await page.waitForFunction(() => {
     const el = document.getElementById('updated');
     return el && el.textContent && el.textContent.length > 5;
-  }, { timeout: 10000 });
+  }, { timeout: 25000 });
   const updated = await page.locator('#updated').textContent();
   expect(updated.length).toBeGreaterThan(5);
 });
