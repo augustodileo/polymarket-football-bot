@@ -1,6 +1,6 @@
 {
   "version": "v1.6.8",
-  "updated_at": "2026-03-23T23:40:55.140929+00:00",
+  "updated_at": "2026-03-23T23:45:55.890560+00:00",
   "summary": {
     "total_trades": 24,
     "wins": 21,
@@ -10,7 +10,20 @@
     "total_staked": 23022.43,
     "roi": -5.0
   },
-  "open_positions": [],
+  "open_positions": [
+    {
+      "event": "Estudiantes de La Plata vs. CA Central C\u00f3rdoba",
+      "side": "YES",
+      "market": "Will Estudiantes de La Plata win on 2026-03-23?",
+      "stake": 1000,
+      "entry_price": 0.9875,
+      "edge_pct": 1.1765359220817673,
+      "score_at_entry": "3-0",
+      "minute": 83,
+      "profit_if_win": 12.65,
+      "loss_if_lose": 999.35
+    }
+  ],
   "scheduled_bets": [
     {
       "event": "VfL Wolfsburg vs. OL Lyonnes",
@@ -25,8 +38,8 @@
     {
       "title": "Estudiantes de La Plata vs. CA Central C\u00f3rdoba",
       "status": "live",
-      "score": "2-0",
-      "minute": "74"
+      "score": "3-0",
+      "minute": "83"
     },
     {
       "title": "CA Hurac\u00e1n vs. CA Barracas Central",
