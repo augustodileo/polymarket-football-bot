@@ -1398,7 +1398,7 @@ def run_loop(config: dict, mode: str):
 
                 if ev.live:
                     score = ev.score or "?"
-                    minute = ev.elapsed or "?"
+                    minute = ev.elapsed or ev.period or "LIVE"
                     todays_matches.append({"title": title, "status": "live", "score": score, "minute": minute})
                 elif 0 < hours_until <= 24:
                     todays_matches.append({"title": title, "status": "upcoming", "kickoff": st.isoformat()})
