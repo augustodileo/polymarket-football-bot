@@ -1,6 +1,6 @@
 {
   "version": "v1.6.7",
-  "updated_at": "2026-03-23T22:55:18.700686+00:00",
+  "updated_at": "2026-03-23T23:00:19.426226+00:00",
   "summary": {
     "total_trades": 24,
     "wins": 21,
@@ -11,7 +11,16 @@
     "roi": -5.0
   },
   "open_positions": [],
-  "scheduled_bets": [],
+  "scheduled_bets": [
+    {
+      "event": "VfL Wolfsburg vs. OL Lyonnes",
+      "fav_team": "OL Lyonnes",
+      "underdog_team": "VfL Wolfsburg",
+      "fav_prob": 0.7,
+      "kickoff": "2026-03-24T17:45:00+00:00",
+      "bet_at": "2026-03-24T17:15:00+00:00"
+    }
+  ],
   "todays_schedule": [
     {
       "title": "Estudiantes de La Plata vs. CA Central C\u00f3rdoba",
