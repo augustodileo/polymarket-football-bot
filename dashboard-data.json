@@ -1,6 +1,6 @@
 {
   "version": "v1.6.8",
-  "updated_at": "2026-03-24T01:51:21.742194+00:00",
+  "updated_at": "2026-03-24T01:56:23.243379+00:00",
   "summary": {
     "total_trades": 25,
     "wins": 22,
@@ -10,7 +10,20 @@
     "total_staked": 24022.43,
     "roi": -4.7
   },
-  "open_positions": [],
+  "open_positions": [
+    {
+      "event": "CA Hurac\u00e1n vs. CA Barracas Central",
+      "side": "NO",
+      "market": "Will CA Barracas Central win on 2026-03-23?",
+      "stake": 1000,
+      "entry_price": 0.925,
+      "edge_pct": 4.802782957585294,
+      "score_at_entry": "0-0",
+      "minute": 82,
+      "profit_if_win": 81.07,
+      "loss_if_lose": 999.93
+    }
+  ],
   "scheduled_bets": [
     {
       "event": "VfL Wolfsburg vs. OL Lyonnes",
@@ -26,7 +39,7 @@
       "title": "CA Hurac\u00e1n vs. CA Barracas Central",
       "status": "live",
       "score": "0-0",
-      "minute": "73"
+      "minute": "82"
     },
     {
       "title": "Arsenal WFC vs. Chelsea FC",
