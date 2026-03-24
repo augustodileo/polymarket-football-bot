@@ -1,29 +1,16 @@
 {
   "version": "v1.6.8",
-  "updated_at": "2026-03-24T02:11:25.896835+00:00",
+  "updated_at": "2026-03-24T02:16:26.649062+00:00",
   "summary": {
-    "total_trades": 25,
-    "wins": 22,
+    "total_trades": 26,
+    "wins": 23,
     "losses": 3,
-    "win_rate": 88.0,
-    "total_pnl": -1129.78,
-    "total_staked": 24022.43,
-    "roi": -4.7
+    "win_rate": 88.5,
+    "total_pnl": -1048.71,
+    "total_staked": 25022.43,
+    "roi": -4.2
   },
-  "open_positions": [
-    {
-      "event": "CA Hurac\u00e1n vs. CA Barracas Central",
-      "side": "NO",
-      "market": "Will CA Barracas Central win on 2026-03-23?",
-      "stake": 1000,
-      "entry_price": 0.925,
-      "edge_pct": 4.802782957585294,
-      "score_at_entry": "0-0",
-      "minute": 82,
-      "profit_if_win": 81.07,
-      "loss_if_lose": 999.93
-    }
-  ],
+  "open_positions": [],
   "scheduled_bets": [
     {
       "event": "VfL Wolfsburg vs. OL Lyonnes",
@@ -35,12 +22,6 @@
     }
   ],
   "todays_schedule": [
-    {
-      "title": "CA Hurac\u00e1n vs. CA Barracas Central",
-      "status": "live",
-      "score": "0-0",
-      "minute": "90"
-    },
     {
       "title": "Arsenal WFC vs. Chelsea FC",
       "status": "upcoming",
@@ -457,6 +438,22 @@
       "score_at_entry": "3-0",
       "final_score": "5-0",
       "minute": 83
+    },
+    {
+      "timestamp": "2026-03-24T02:16:07.678493+00:00",
+      "event": "CA Hurac\u00e1n vs. CA Barracas Central",
+      "pnl": 81.07,
+      "cumulative": -1048.71,
+      "outcome": "WIN",
+      "side": "NO",
+      "market": "Will CA Barracas Central win on 2026-03-23?",
+      "edge_pct": 4.8,
+      "stake": 1000,
+      "league": "Argentina Primera Divisi\u00f3n",
+      "trade_type": "STANDARD",
+      "score_at_entry": "0-0",
+      "final_score": "0-0",
+      "minute": 82
     }
   ],
   "by_league": {
@@ -506,9 +503,9 @@
       "pnl": 14.7
     },
     "Argentina Primera Divisi\u00f3n": {
-      "trades": 1,
-      "wins": 1,
-      "pnl": 12.65
+      "trades": 2,
+      "wins": 2,
+      "pnl": 93.72
     }
   },
   "by_day": {
@@ -526,6 +523,11 @@
       "trades": 3,
       "wins": 3,
       "pnl": 62.54
+    },
+    "2026-03-24": {
+      "trades": 1,
+      "wins": 1,
+      "pnl": 81.07
     }
   }
 }
